@@ -85,8 +85,9 @@ class MainActivity : ComponentActivity() {
 
                     messages.add(
                         Message(
-                            result.getOrElse {
-                                "Não consegui responder agora. Verifique sua chave da API e sua conexão com a internet."
+                            result.getOrElse { error ->
+                                val detail = error.message?.takeIf { it.isNotBlank() } ?: error.javaClass.simpleName
+                                "Erro ao conectar com a Gemini: $detail"
                             },
                             false
                         )
