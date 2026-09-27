@@ -1,5 +1,6 @@
 package com.henryia.app.ai
 
+import android.util.Base64
 import com.henryia.app.core.model.Attachment
 import org.json.JSONArray
 import org.json.JSONObject
