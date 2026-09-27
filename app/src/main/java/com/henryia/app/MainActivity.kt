@@ -16,6 +16,8 @@ import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -62,6 +64,7 @@ private fun HenryApp(vm: HenryViewModel = viewModel()) {
     var drawerOpen by remember { mutableStateOf(false) }
     var input by remember { mutableStateOf("") }
     var settingsOpen by remember { mutableStateOf(false) }
+    var webEnabled by remember { mutableStateOf(false) }
 
     Row(Modifier.fillMaxSize().background(HenryDark)) {
         if (drawerOpen) {
@@ -93,9 +96,11 @@ private fun HenryApp(vm: HenryViewModel = viewModel()) {
                 value = input,
                 onValueChange = { input = it },
                 onSend = {
-                    vm.send(input)
+                    vm.send(input, forceWeb = webEnabled)
                     input = ""
                 },
+                webEnabled = webEnabled,
+                onWebToggle = { webEnabled = !webEnabled },
                 enabled = !isGenerating
             )
         }
@@ -167,6 +172,8 @@ private fun Composer(
     value: String,
     onValueChange: (String) -> Unit,
     onSend: () -> Unit,
+    webEnabled: Boolean = false,
+    onWebToggle: () -> Unit = {},
     enabled: Boolean = true
 ) {
     Surface(
@@ -178,20 +185,28 @@ private fun Composer(
             Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = { }) {
-                Icon(Icons.Default.AttachFile, "Anexar")
+            IconButton(onClick = onWebToggle, enabled = enabled) {
+                Icon(
+                    if (webEnabled) Icons.Default.Language else Icons.Default.AutoAwesome,
+                    if (webEnabled) "Pesquisa web ativada" else "Ferramentas"
+                )
             }
             OutlinedTextField(
                 value = value,
                 onValueChange = onValueChange,
                 modifier = Modifier.weight(1f),
-                placeholder = { Text("Mensagem para Henry...") },
+                placeholder = { Text(if (webEnabled) "Pesquisar na web com Henry..." else "Mensagem para Henry...") },
                 maxLines = 5,
                 colors = OutlinedTextFieldDefaults.colors(
                     unfocusedBorderColor = Color.Transparent,
                     focusedBorderColor = HenryBlue
                 )
             )
+            if (webEnabled) {
+                Surface(color = HenryBlue.copy(alpha = 0.18f), shape = RoundedCornerShape(10.dp)) {
+                    Text("WEB", color = HenryCyan, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 7.dp, vertical = 5.dp))
+                }
+            }
             IconButton(onClick = { }) {
                 Icon(Icons.Default.Mic, "Voz")
             }
