@@ -141,19 +141,24 @@ private fun HenryApp(vm: HenryViewModel = viewModel()) {
                 value = input,
                 onValueChange = { input = it },
                 onSend = {
-                    vm.send(input, forceWeb = webEnabled)
+                    vm.send(input, forceWeb = webEnabled, attachments = attachments)
                     input = ""
+                    attachments = emptyList()
                 },
                 webEnabled = webEnabled,
                 onWebToggle = { webEnabled = !webEnabled },
                 onVoice = { startVoice() },
+                onAttach = { fileLauncher.launch("*/*") },
+                attachments = attachments,
+                onRemoveAttachment = { item -> attachments = attachments.filterNot { it.uri == item.uri } },
                 listening = listening,
                 enabled = !isGenerating
             )
         }
         if (settingsOpen) {
             SettingsDialog(
-                currentKey = if (vm.hasApiKey()) "saved" else "",\n                memoryCount = vm.memoryCount(),\n                onClearMemory = { vm.clearMemory() },
+                currentKey = if (vm.hasApiKey()) "saved" else "",
+                memoryCount = vm.memoryCount(),\n                onClearMemory = { vm.clearMemory() },
                 onSave = { vm.saveApiKey(it); settingsOpen = false },
                 onDismiss = { settingsOpen = false }
             )
@@ -230,6 +235,9 @@ private fun Composer(
     webEnabled: Boolean = false,
     onWebToggle: () -> Unit = {},
     onVoice: () -> Unit = {},
+    onAttach: () -> Unit = {},
+    attachments: List<Attachment> = emptyList(),
+    onRemoveAttachment: (Attachment) -> Unit = {},
     listening: Boolean = false,
     enabled: Boolean = true
 ) {
@@ -238,40 +246,53 @@ private fun Composer(
         modifier = Modifier.fillMaxWidth().padding(12.dp),
         shape = RoundedCornerShape(24.dp)
     ) {
-        Row(
-            Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onWebToggle, enabled = enabled) {
-                Icon(
-                    if (webEnabled) Icons.Default.Language else Icons.Default.AutoAwesome,
-                    if (webEnabled) "Pesquisa web ativada" else "Ferramentas"
-                )
-            }
-            if (attachments.isNotEmpty()) {\n                Row(Modifier.widthIn(max = 170.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {\n                    attachments.take(2).forEach { item ->\n                        Surface(color = HenryBlue.copy(alpha = 0.18f), shape = RoundedCornerShape(8.dp)) {\n                            Row(Modifier.padding(start = 7.dp), verticalAlignment = Alignment.CenterVertically) {\n                                Text(item.name.take(14), color = HenryCyan, fontSize = 10.sp, maxLines = 1)\n                                IconButton(onClick = { onRemoveAttachment(item) }, modifier = Modifier.size(22.dp)) { Icon(Icons.Default.Close, "Remover", modifier = Modifier.size(14.dp)) }\n                            }\n                        }\n                    }\n                }\n            }\n            OutlinedTextField(
-                value = value,
-                onValueChange = onValueChange,
-                modifier = Modifier.weight(1f),
-                placeholder = { Text(if (webEnabled) "Pesquisar na web com Henry..." else "Mensagem para Henry...") },
-                maxLines = 5,
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedBorderColor = Color.Transparent,
-                    focusedBorderColor = HenryBlue
-                )
-            )
-            if (webEnabled) {
-                Surface(color = HenryBlue.copy(alpha = 0.18f), shape = RoundedCornerShape(10.dp)) {
-                    Text("WEB", color = HenryCyan, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 7.dp, vertical = 5.dp))
+        Column(Modifier.padding(horizontal = 8.dp, vertical = 6.dp)) {
+            if (attachments.isNotEmpty()) {
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    attachments.take(3).forEach { item ->
+                        Surface(color = HenryBlue.copy(alpha = 0.18f), shape = RoundedCornerShape(8.dp)) {
+                            Row(Modifier.padding(start = 7.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text(item.name.take(14), color = HenryCyan, fontSize = 10.sp, maxLines = 1)
+                                IconButton(onClick = { onRemoveAttachment(item) }, modifier = Modifier.size(22.dp)) {
+                                    Icon(Icons.Default.Close, "Remover", modifier = Modifier.size(14.dp))
+                                }
+                            }
+                        }
+                    }
                 }
             }
-            IconButton(onClick = { }) {
-                Icon(Icons.Default.Mic, "Voz")
-            }
-            IconButton(
-                onClick = onSend,
-                enabled = value.isNotBlank() && enabled
-            ) {
-                Icon(Icons.Default.Send, "Enviar", tint = HenryCyan)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onWebToggle, enabled = enabled) {
+                    Icon(
+                        if (webEnabled) Icons.Default.Language else Icons.Default.AutoAwesome,
+                        if (webEnabled) "Pesquisa web ativada" else "Ferramentas"
+                    )
+                }
+                OutlinedTextField(
+                    value = value,
+                    onValueChange = onValueChange,
+                    modifier = Modifier.weight(1f),
+                    placeholder = { Text(if (webEnabled) "Pesquisar na web com Henry..." else "Mensagem para Henry...") },
+                    maxLines = 5,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedBorderColor = Color.Transparent,
+                        focusedBorderColor = HenryBlue
+                    )
+                )
+                if (webEnabled) {
+                    Surface(color = HenryBlue.copy(alpha = 0.18f), shape = RoundedCornerShape(10.dp)) {
+                        Text("WEB", color = HenryCyan, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 7.dp, vertical = 5.dp))
+                    }
+                }
+                IconButton(onClick = onAttach, enabled = enabled) {
+                    Icon(Icons.Default.AttachFile, "Anexar arquivo")
+                }
+                IconButton(onClick = onVoice, enabled = enabled) {
+                    Icon(Icons.Default.Mic, "Voz", tint = if (listening) HenryCyan else LocalContentColor.current)
+                }
+                IconButton(onClick = onSend, enabled = (value.isNotBlank() || attachments.isNotEmpty()) && enabled) {
+                    Icon(Icons.Default.Send, "Enviar", tint = HenryCyan)
+                }
             }
         }
     }
@@ -351,6 +372,8 @@ private fun HenryDrawer(conversations: List<com.henryia.app.core.model.ChatConve
 @Composable
 private fun SettingsDialog(
     currentKey: String,
+    memoryCount: Int = 0,
+    onClearMemory: () -> Unit = {},
     onSave: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -371,7 +394,13 @@ private fun SettingsDialog(
                 if (currentKey.isNotBlank()) {
                     Text("Uma chave já está salva neste aparelho.", color = Color.Gray, fontSize = 12.sp)
                 }
-                Text("A chave fica salva apenas no armazenamento local do aplicativo.", color = Color.Gray, fontSize = 12.sp)\n                HorizontalDivider()\n                Text("Memória do Henry: $memoryCount item(ns)", fontWeight = FontWeight.Bold)\n                Text("O Henry só grava uma memória quando você pedir com frases como “lembre que...”.", color = Color.Gray, fontSize = 12.sp)\n                TextButton(onClick = onClearMemory, enabled = memoryCount > 0) { Text("Apagar memórias") }
+                Text("A chave fica salva apenas no armazenamento local do aplicativo.", color = Color.Gray, fontSize = 12.sp)
+                HorizontalDivider()
+                Text("Memória do Henry: $memoryCount item(ns)", fontWeight = FontWeight.Bold)
+                Text("O Henry só grava uma memória quando você pedir com “lembre que...”.", color = Color.Gray, fontSize = 12.sp)
+                TextButton(onClick = onClearMemory, enabled = memoryCount > 0) {
+                    Text("Apagar memórias")
+                }
             }
         },
         confirmButton = {
