@@ -44,6 +44,7 @@ import com.henryia.app.core.model.MessageRole
 import com.henryia.app.core.VoiceController
 import com.henryia.app.core.HenrySpeaker
 import com.henryia.app.core.model.Attachment
+import com.henryia.app.ai.GeneratedProject
 import java.io.ByteArrayOutputStream
 
 class MainActivity : ComponentActivity() {
@@ -84,6 +85,7 @@ private fun HenryApp(vm: HenryViewModel = viewModel()) {
     var listening by remember { mutableStateOf(false) }
     var attachments by remember { mutableStateOf<List<Attachment>>(emptyList()) }
     var masterMode by remember { mutableStateOf(false) }
+    var projectsOpen by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val voiceController = remember { VoiceController(context) }
     val speaker = remember { HenrySpeaker(context) }
@@ -146,7 +148,7 @@ private fun HenryApp(vm: HenryViewModel = viewModel()) {
                 onSelect = { vm.selectConversation(it); drawerOpen = false },
                 onNewChat = { vm.newChat(); drawerOpen = false },
                 onClose = { drawerOpen = false },
-                onSettings = { drawerOpen = false; settingsOpen = true }
+                onSettings = { drawerOpen = false; settingsOpen = true }, onProjects = { drawerOpen = false; projectsOpen = true }
             )
         }
 
@@ -346,7 +348,7 @@ private fun ThinkingBubble() {
 }
 
 @Composable
-private fun HenryDrawer(conversations: List<com.henryia.app.core.model.ChatConversation>, activeId: Long, onSelect: (Long) -> Unit, onNewChat: () -> Unit, onClose: () -> Unit, onSettings: () -> Unit) {
+private fun HenryDrawer(conversations: List<com.henryia.app.core.model.ChatConversation>, activeId: Long, onSelect: (Long) -> Unit, onNewChat: () -> Unit, onClose: () -> Unit, onSettings: () -> Unit, onProjects: () -> Unit) {
     Surface(
         color = Color(0xFF0C1017),
         modifier = Modifier.width(285.dp).fillMaxHeight()
