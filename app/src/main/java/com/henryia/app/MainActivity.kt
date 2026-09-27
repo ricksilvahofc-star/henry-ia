@@ -60,12 +60,14 @@ private fun HenryApp(vm: HenryViewModel = viewModel()) {
     val messages by vm.messages.collectAsState()
     var drawerOpen by remember { mutableStateOf(false) }
     var input by remember { mutableStateOf("") }
+    var settingsOpen by remember { mutableStateOf(false) }
 
     Row(Modifier.fillMaxSize().background(HenryDark)) {
         if (drawerOpen) {
             HenryDrawer(
                 onNewChat = { vm.newChat(); drawerOpen = false },
-                onClose = { drawerOpen = false }
+                onClose = { drawerOpen = false },
+                onSettings = { drawerOpen = false; settingsOpen = true }
             )
         }
 
@@ -92,6 +94,13 @@ private fun HenryApp(vm: HenryViewModel = viewModel()) {
                     vm.send(input)
                     input = ""
                 }
+            )
+        }
+        if (settingsOpen) {
+            SettingsDialog(
+                currentKey = if (vm.hasApiKey()) "saved" else "",
+                onSave = { vm.saveApiKey(it); settingsOpen = false },
+                onDismiss = { settingsOpen = false }
             )
         }
     }
@@ -193,7 +202,7 @@ private fun Composer(
 }
 
 @Composable
-private fun HenryDrawer(onNewChat: () -> Unit, onClose: () -> Unit) {
+private fun HenryDrawer(onNewChat: () -> Unit, onClose: () -> Unit, onSettings: () -> Unit) {
     Surface(
         color = Color(0xFF0C1017),
         modifier = Modifier.width(285.dp).fillMaxHeight()
@@ -231,7 +240,7 @@ private fun HenryDrawer(onNewChat: () -> Unit, onClose: () -> Unit) {
             Spacer(Modifier.weight(1f))
 
             Row(
-                Modifier.fillMaxWidth().clickable { }.padding(12.dp),
+                Modifier.fillMaxWidth().clickable { onSettings() }.padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(Icons.Default.Settings, null, tint = Color.Gray)
@@ -240,4 +249,40 @@ private fun HenryDrawer(onNewChat: () -> Unit, onClose: () -> Unit) {
             }
         }
     }
+}
+
+
+@Composable
+private fun SettingsDialog(
+    currentKey: String,
+    onSave: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var key by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Configurações do Henry") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Conecte o Henry ao OpenRouter para usar os modelos gratuitos.")
+                OutlinedTextField(
+                    value = key,
+                    onValueChange = { key = it },
+                    label = { Text("Chave da API") },
+                    placeholder = { Text("sk-or-v1-...") },
+                    singleLine = true
+                )
+                if (currentKey.isNotBlank()) {
+                    Text("Uma chave já está salva neste aparelho.", color = Color.Gray, fontSize = 12.sp)
+                }
+                Text("A chave fica salva apenas no armazenamento local do aplicativo.", color = Color.Gray, fontSize = 12.sp)
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { if (key.isNotBlank()) onSave(key) }, enabled = key.isNotBlank()) {
+                Text("Salvar")
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
+    )
 }
