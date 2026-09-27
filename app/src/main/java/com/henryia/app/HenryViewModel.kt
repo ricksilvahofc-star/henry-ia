@@ -13,6 +13,7 @@ import com.henryia.app.core.ApiKeyStore
 import com.henryia.app.core.ConversationStore
 import com.henryia.app.core.MemoryStore
 import com.henryia.app.core.MasterModeStore
+import com.henryia.app.core.ProjectStore
 import com.henryia.app.core.model.Attachment
 import com.henryia.app.core.model.ChatConversation
 import com.henryia.app.core.model.ChatMessage
@@ -30,6 +31,7 @@ class HenryViewModel(app: Application) : AndroidViewModel(app) {
     private val memoryStore = MemoryStore(app)
     private val masterModeStore = MasterModeStore(app)
     private val masterProjectGenerator = MasterProjectGenerator(router)
+    private val projectStore = ProjectStore(app)
 
     private val _conversations = MutableStateFlow(store.load())
     val conversations: StateFlow<List<ChatConversation>> = _conversations.asStateFlow()
@@ -60,6 +62,8 @@ class HenryViewModel(app: Application) : AndroidViewModel(app) {
     fun setMasterPassword(password: String) = masterModeStore.setPassword(password)
     fun verifyMasterPassword(password: String): Boolean = masterModeStore.verify(password)
     fun clearMasterPassword() = masterModeStore.clearPassword()
+    fun projects() = projectStore.loadAll()
+    fun clearProjects() = projectStore.clear()
 
     fun newChat() {
         createConversation()
@@ -114,6 +118,7 @@ class HenryViewModel(app: Application) : AndroidViewModel(app) {
                     if (masterPlan != null && attachments.isEmpty()) {
                         val project = masterProjectGenerator.generate(masterPlan, clean, context)
                         if (project != null) {
+                            projectStore.save(project)
                             val fileSummary = project.files.joinToString("\n") { "• " + it.path }
                             "👑 Projeto criado: " + project.name + "\n\n" + project.description +
                                 "\n\nArquivos gerados (" + project.files.size + "):\n" + fileSummary +
