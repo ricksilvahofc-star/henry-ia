@@ -3,6 +3,8 @@ package com.henryia.app
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.net.Uri
+import android.util.Base64
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -17,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Send
@@ -39,6 +42,8 @@ import androidx.compose.ui.graphics.Color
 import com.henryia.app.core.model.MessageRole
 import com.henryia.app.core.VoiceController
 import com.henryia.app.core.HenrySpeaker
+import com.henryia.app.core.model.Attachment
+import java.io.ByteArrayOutputStream
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -75,11 +80,11 @@ private fun HenryApp(vm: HenryViewModel = viewModel()) {
     var input by remember { mutableStateOf("") }
     var settingsOpen by remember { mutableStateOf(false) }
     var webEnabled by remember { mutableStateOf(false) }
-    var listening by remember { mutableStateOf(false) }
+    var listening by remember { mutableStateOf(false) }\n    var attachments by remember { mutableStateOf<List<Attachment>>(emptyList()) }
     val context = LocalContext.current
     val voiceController = remember { VoiceController(context) }
     val speaker = remember { HenrySpeaker(context) }
-    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+    val fileLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->\n        uri?.let { prepareAttachment(context, it)?.let { item -> attachments = (attachments + item).takeLast(4) } }\n    }\n    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) {
             listening = true
             voiceController.start(
@@ -243,7 +248,7 @@ private fun Composer(
                     if (webEnabled) "Pesquisa web ativada" else "Ferramentas"
                 )
             }
-            OutlinedTextField(
+            if (attachments.isNotEmpty()) {\n                Row(Modifier.widthIn(max = 170.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {\n                    attachments.take(2).forEach { item ->\n                        Surface(color = HenryBlue.copy(alpha = 0.18f), shape = RoundedCornerShape(8.dp)) {\n                            Row(Modifier.padding(start = 7.dp), verticalAlignment = Alignment.CenterVertically) {\n                                Text(item.name.take(14), color = HenryCyan, fontSize = 10.sp, maxLines = 1)\n                                IconButton(onClick = { onRemoveAttachment(item) }, modifier = Modifier.size(22.dp)) { Icon(Icons.Default.Close, "Remover", modifier = Modifier.size(14.dp)) }\n                            }\n                        }\n                    }\n                }\n            }\n            OutlinedTextField(
                 value = value,
                 onValueChange = onValueChange,
                 modifier = Modifier.weight(1f),
@@ -376,4 +381,31 @@ private fun SettingsDialog(
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
     )
+}
+
+
+private fun prepareAttachment(context: android.content.Context, uri: Uri): Attachment? {
+    val resolver = context.contentResolver
+    val mime = resolver.getType(uri) ?: "application/octet-stream"
+    val name = runCatching {
+        resolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) cursor.getString(0) else null
+        }
+    }.getOrNull() ?: "arquivo"
+
+    return runCatching {
+        val bytes = resolver.openInputStream(uri)?.use { input ->
+            val output = ByteArrayOutputStream()
+            input.copyTo(output)
+            output.toByteArray()
+        } ?: return null
+
+        if (mime.startsWith("image/")) {
+            Attachment(name, mime, "base64," + Base64.encodeToString(bytes, Base64.NO_WRAP))
+        } else if (mime.startsWith("text/") || mime.contains("json") || name.endsWith(".kt") || name.endsWith(".java") || name.endsWith(".xml") || name.endsWith(".md")) {
+            Attachment(name, mime, "textbase64:" + Base64.encodeToString(bytes, Base64.NO_WRAP))
+        } else {
+            Attachment(name, mime, "file")
+        }
+    }.getOrNull()
 }
