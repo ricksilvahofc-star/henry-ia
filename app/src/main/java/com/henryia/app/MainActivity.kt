@@ -3,6 +3,7 @@ package com.henryia.app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -20,6 +21,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -116,7 +118,7 @@ private fun WelcomeHeader() {
         Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("H", color = HenryCyan, fontSize = 42.sp, fontWeight = FontWeight.ExtraBold)
+        Image(painterResource(com.henryia.app.R.drawable.henry_logo), contentDescription = "Logo do Henry", modifier = Modifier.size(82.dp))
         Text("Como posso ajudar?", fontSize = 27.sp, fontWeight = FontWeight.Bold)
         Text(
             "Pergunte, crie, pesquise ou peça uma tarefa.",
@@ -198,7 +200,7 @@ private fun HenryDrawer(onNewChat: () -> Unit, onClose: () -> Unit) {
     ) {
         Column(Modifier.fillMaxSize().padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("HENRY", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = HenryCyan)
+                Row(verticalAlignment = Alignment.CenterVertically) { Image(painterResource(com.henryia.app.R.drawable.henry_logo), contentDescription = null, modifier = Modifier.size(42.dp)); Spacer(Modifier.width(8.dp)); Text("HENRY", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = HenryCyan) }
                 Spacer(Modifier.weight(1f))
                 IconButton(onClick = onClose) { Icon(Icons.Default.Menu, "Fechar") }
             }
