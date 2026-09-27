@@ -54,7 +54,9 @@ class OpenRouterProvider(private val apiKeyProvider: () -> String) : AiProvider 
             connection.doOutput = true
             connection.setRequestProperty("Authorization", "Bearer " + key)
             connection.setRequestProperty("Content-Type", "application/json")
+            connection.setRequestProperty("Accept", "application/json")
             connection.setRequestProperty("X-Title", "Henry")
+            connection.setRequestProperty("HTTP-Referer", "https://github.com/ricksilvahofc-star/henry-ia")
             connection.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
 
             val status = connection.responseCode
@@ -69,8 +71,16 @@ class OpenRouterProvider(private val apiKeyProvider: () -> String) : AiProvider 
 
             JSONObject(response).optJSONArray("choices")?.optJSONObject(0)?.optJSONObject("message")
                 ?.optString("content")?.takeIf { it.isNotBlank() } ?: "A IA respondeu sem texto."
-        } catch (_: Exception) {
-            "Não consegui conectar à IA. Verifique sua internet e tente novamente."
+        } catch (e: java.net.UnknownHostException) {
+            "Não consegui encontrar o servidor do OpenRouter. Verifique sua conexão com a internet ou DNS."
+        } catch (e: java.net.SocketTimeoutException) {
+            "A conexão com o OpenRouter demorou demais. Verifique sua internet e tente novamente."
+        } catch (e: javax.net.ssl.SSLException) {
+            "Falha de segurança HTTPS ao conectar ao OpenRouter. Verifique a data/hora do celular e a rede."
+        } catch (e: java.io.IOException) {
+            "Falha de rede ao conectar ao OpenRouter: " + (e.message ?: "erro de comunicação") + "."
+        } catch (e: Exception) {
+            "Erro ao processar a resposta da IA: " + (e.message ?: e.javaClass.simpleName) + "."
         } finally {
             connection.disconnect()
         }
