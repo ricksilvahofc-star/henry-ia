@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.henryia.app.ai.AiRouter
 import com.henryia.app.ai.OpenRouterProvider
 import com.henryia.app.ai.LocalTools
+import com.henryia.app.ai.MasterPlanner
 import com.henryia.app.ai.WebLookup
 import com.henryia.app.core.ApiKeyStore
 import com.henryia.app.core.ConversationStore
@@ -107,8 +108,11 @@ class HenryViewModel(app: Application) : AndroidViewModel(app) {
                         $webResult
                         """.trimIndent()
                     } else clean
-                    val finalPrompt = if (masterMode) {
-                        """Você está no Modo Mestre do Henry. O usuário autorizou este modo para tarefas de criação e engenharia. Seja proativo: planeje projetos, proponha arquitetura, escreva código, organize arquivos, explique como testar e ajude a construir softwares e outras IAs. Não invente ferramentas ou acesso que não existam. Continue respeitando as regras de segurança aplicáveis.\n\nPedido do usuário:\n$prompt""".trimIndent()
+                    val masterPlan = if (masterMode) MasterPlanner.detect(clean) else null
+                    val finalPrompt = if (masterPlan != null) {
+                        MasterPlanner.promptFor(masterPlan, clean)
+                    } else if (masterMode) {
+                        "Você está no Modo Mestre do Henry. Seja proativo em tarefas de criação e engenharia. Pedido: $prompt"
                     } else prompt
                     router.generate(finalPrompt, context, attachments)
                 }
