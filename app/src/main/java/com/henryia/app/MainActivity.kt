@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -37,6 +38,7 @@ import androidx.core.content.ContextCompat
 import androidx.compose.ui.graphics.Color
 import com.henryia.app.core.model.MessageRole
 import com.henryia.app.core.VoiceController
+import com.henryia.app.core.HenrySpeaker
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -75,6 +77,7 @@ private fun HenryApp(vm: HenryViewModel = viewModel()) {
     var listening by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val voiceController = remember { VoiceController(context) }
+    val speaker = remember { HenrySpeaker(context) }
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) {
             listening = true
@@ -85,7 +88,7 @@ private fun HenryApp(vm: HenryViewModel = viewModel()) {
         }
     }
     DisposableEffect(Unit) {
-        onDispose { voiceController.destroy() }
+        onDispose { voiceController.destroy(); speaker.destroy() }
     }
     fun startVoice() {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
@@ -120,7 +123,7 @@ private fun HenryApp(vm: HenryViewModel = viewModel()) {
                     item { WelcomeHeader() }
                 }
                 items(messages, key = { it.id }) { message ->
-                    MessageBubble(message.role, message.text)
+                    MessageBubble(message.role, message.text, onSpeak = if (message.role == MessageRole.HENRY) ({ speaker.speak(message.text) }) else null)
                 }
                 if (isGenerating) { item { ThinkingBubble() } }
             }
@@ -181,7 +184,7 @@ private fun WelcomeHeader() {
 }
 
 @Composable
-private fun MessageBubble(role: MessageRole, text: String) {
+private fun MessageBubble(role: MessageRole, text: String, onSpeak: (() -> Unit)? = null) {
     val user = role == MessageRole.USER
     Row(
         Modifier.fillMaxWidth(),
@@ -192,12 +195,20 @@ private fun MessageBubble(role: MessageRole, text: String) {
             shape = RoundedCornerShape(18.dp),
             modifier = Modifier.widthIn(max = 340.dp)
         ) {
-            Text(
-                text = text,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                color = Color.White,
-                fontSize = 15.sp
-            )
+            Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                Text(
+                    text = text,
+                    color = Color.White,
+                    fontSize = 15.sp
+                )
+                if (onSpeak != null) {
+                    TextButton(onClick = onSpeak, contentPadding = PaddingValues(0.dp)) {
+                        Icon(Icons.Default.VolumeUp, contentDescription = "Ouvir resposta")
+                        Spacer(Modifier.width(4.dp))
+                        Text("Ouvir")
+                    }
+                }
+            }
         }
     }
 }
