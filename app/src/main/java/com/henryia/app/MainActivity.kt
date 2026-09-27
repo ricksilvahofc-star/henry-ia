@@ -1,7 +1,11 @@
 package com.henryia.app
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -24,12 +28,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.core.content.ContextCompat
+import androidx.compose.ui.graphics.Color
 import com.henryia.app.core.model.MessageRole
+import com.henryia.app.core.VoiceController
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,6 +72,32 @@ private fun HenryApp(vm: HenryViewModel = viewModel()) {
     var input by remember { mutableStateOf("") }
     var settingsOpen by remember { mutableStateOf(false) }
     var webEnabled by remember { mutableStateOf(false) }
+    var listening by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val voiceController = remember { VoiceController(context) }
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) {
+            listening = true
+            voiceController.start(
+                onResult = { spoken -> input = spoken; listening = false },
+                onError = { listening = false }
+            )
+        }
+    }
+    DisposableEffect(Unit) {
+        onDispose { voiceController.destroy() }
+    }
+    fun startVoice() {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            listening = true
+            voiceController.start(
+                onResult = { spoken -> input = spoken; listening = false },
+                onError = { listening = false }
+            )
+        } else {
+            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        }
+    }
 
     Row(Modifier.fillMaxSize().background(HenryDark)) {
         if (drawerOpen) {
@@ -101,6 +134,8 @@ private fun HenryApp(vm: HenryViewModel = viewModel()) {
                 },
                 webEnabled = webEnabled,
                 onWebToggle = { webEnabled = !webEnabled },
+                onVoice = { startVoice() },
+                listening = listening,
                 enabled = !isGenerating
             )
         }
@@ -174,6 +209,8 @@ private fun Composer(
     onSend: () -> Unit,
     webEnabled: Boolean = false,
     onWebToggle: () -> Unit = {},
+    onVoice: () -> Unit = {},
+    listening: Boolean = false,
     enabled: Boolean = true
 ) {
     Surface(
