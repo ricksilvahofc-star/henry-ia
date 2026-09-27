@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.henryia.app.ai.AiRouter
 import com.henryia.app.ai.OpenRouterProvider
+import com.henryia.app.ai.WebLookup
 import com.henryia.app.core.ApiKeyStore
 import com.henryia.app.core.model.ChatMessage
 import com.henryia.app.core.model.MessageRole
@@ -19,6 +20,7 @@ class HenryViewModel(app: Application) : AndroidViewModel(app) {
     private val keyStore = ApiKeyStore(app)
     private val prefs = app.getSharedPreferences("henry_chat", 0)
     private val router = AiRouter(listOf(OpenRouterProvider { keyStore.getOpenRouterKey() }))
+    private val webLookup = WebLookup()
     private var nextId = 1L
 
     private val _messages = MutableStateFlow(loadMessages())
@@ -48,13 +50,45 @@ class HenryViewModel(app: Application) : AndroidViewModel(app) {
             _isGenerating.value = true
             try {
                 val context = _messages.value.dropLast(1).takeLast(10).map { it.text }
-                val answer = router.generate(clean, context)
+                val webResult = if (isWebRequest(clean)) webLookup.search(clean) else ""
+
+                val answer = if (!hasApiKey() && webResult.isNotBlank()) {
+                    "Pesquisei na web e encontrei isto:\n\n$webResult"
+                } else {
+                    val prompt = if (webResult.isNotBlank()) {
+                        """
+                        Responda à pergunta do usuário usando os dados abaixo como contexto de uma consulta web.
+                        Diferencie fatos encontrados na web de informações que você não consegue confirmar.
+                        Se os dados não forem suficientes, diga isso claramente.
+
+                        Pergunta do usuário:
+                        $clean
+
+                        Dados da consulta web:
+                        $webResult
+                        """.trimIndent()
+                    } else {
+                        clean
+                    }
+                    router.generate(prompt, context)
+                }
+
                 _messages.value = _messages.value + ChatMessage(nextId++, MessageRole.HENRY, answer)
                 persist()
             } finally {
                 _isGenerating.value = false
             }
         }
+    }
+
+    private fun isWebRequest(text: String): Boolean {
+        val query = text.lowercase()
+        val triggers = listOf(
+            "pesquise", "pesquisar", "pesquisa", "procure", "procurar",
+            "busque", "buscar", "internet", "na web", "web", "notícias",
+            "noticia", "atualizado", "atualizada", "hoje", "agora"
+        )
+        return triggers.any { query.contains(it) }
     }
 
     private fun loadMessages(): List<ChatMessage> {
