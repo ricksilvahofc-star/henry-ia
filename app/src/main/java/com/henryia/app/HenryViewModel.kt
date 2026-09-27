@@ -10,6 +10,7 @@ import com.henryia.app.ai.WebLookup
 import com.henryia.app.core.ApiKeyStore
 import com.henryia.app.core.ConversationStore
 import com.henryia.app.core.MemoryStore
+import com.henryia.app.core.MasterModeStore
 import com.henryia.app.core.model.Attachment
 import com.henryia.app.core.model.ChatConversation
 import com.henryia.app.core.model.ChatMessage
@@ -25,6 +26,7 @@ class HenryViewModel(app: Application) : AndroidViewModel(app) {
     private val webLookup = WebLookup()
     private val store = ConversationStore(app)
     private val memoryStore = MemoryStore(app)
+    private val masterModeStore = MasterModeStore(app)
 
     private val _conversations = MutableStateFlow(store.load())
     val conversations: StateFlow<List<ChatConversation>> = _conversations.asStateFlow()
@@ -49,7 +51,12 @@ class HenryViewModel(app: Application) : AndroidViewModel(app) {
 
     fun hasApiKey(): Boolean = keyStore.getOpenRouterKey().isNotBlank()
     fun saveApiKey(key: String) = keyStore.setOpenRouterKey(key)
-    fun memoryCount(): Int = memoryStore.load().size\n    fun clearMemory() = memoryStore.clear()
+    fun memoryCount(): Int = memoryStore.load().size
+    fun clearMemory() = memoryStore.clear()
+    fun hasMasterPassword(): Boolean = masterModeStore.hasPassword()
+    fun setMasterPassword(password: String) = masterModeStore.setPassword(password)
+    fun verifyMasterPassword(password: String): Boolean = masterModeStore.verify(password)
+    fun clearMasterPassword() = masterModeStore.clearPassword()
 
     fun newChat() {
         createConversation()
@@ -63,7 +70,7 @@ class HenryViewModel(app: Application) : AndroidViewModel(app) {
         nextId = (_messages.value.maxOfOrNull { it.id } ?: 0L) + 1L
     }
 
-    fun send(text: String, forceWeb: Boolean = false, attachments: List<Attachment> = emptyList()) {
+    fun send(text: String, forceWeb: Boolean = false, attachments: List<Attachment> = emptyList(), masterMode: Boolean = false) {
         val clean = text.trim()
         if (clean.isEmpty() || _isGenerating.value) return
 
@@ -100,7 +107,10 @@ class HenryViewModel(app: Application) : AndroidViewModel(app) {
                         $webResult
                         """.trimIndent()
                     } else clean
-                    router.generate(prompt, context, attachments)
+                    val finalPrompt = if (masterMode) {
+                        """Você está no Modo Mestre do Henry. O usuário autorizou este modo para tarefas de criação e engenharia. Seja proativo: planeje projetos, proponha arquitetura, escreva código, organize arquivos, explique como testar e ajude a construir softwares e outras IAs. Não invente ferramentas ou acesso que não existam. Continue respeitando as regras de segurança aplicáveis.\n\nPedido do usuário:\n$prompt""".trimIndent()
+                    } else prompt
+                    router.generate(finalPrompt, context, attachments)
                 }
 
                 _messages.value = _messages.value + ChatMessage(nextId++, MessageRole.HENRY, answer)
