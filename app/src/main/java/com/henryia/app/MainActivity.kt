@@ -118,7 +118,19 @@ private fun HenryApp(vm: HenryViewModel = viewModel()) {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
             listening = true
             voiceController.start(
-                onResult = { spoken -> input = spoken; listening = false },
+                onResult = { spoken ->
+                    listening = false
+                    val normalized = spoken.trim()
+                    if (vm.verifyMasterPassword(normalized)) {
+                        masterMode = true
+                        input = ""
+                    } else if (masterMode && normalized.equals("desativar modo mestre", ignoreCase = true)) {
+                        masterMode = false
+                        input = ""
+                    } else {
+                        input = spoken
+                    }
+                },
                 onError = { listening = false }
             )
         } else {
@@ -139,7 +151,7 @@ private fun HenryApp(vm: HenryViewModel = viewModel()) {
         }
 
         Column(Modifier.fillMaxSize().weight(1f)) {
-            TopBar(onMenu = { drawerOpen = true })
+            TopBar(onMenu = { drawerOpen = true }, masterMode = masterMode)
 
             LazyColumn(
                 modifier = Modifier.weight(1f).fillMaxWidth(),
@@ -189,7 +201,7 @@ private fun HenryApp(vm: HenryViewModel = viewModel()) {
 }
 
 @Composable
-private fun TopBar(onMenu: () -> Unit) {
+private fun TopBar(onMenu: () -> Unit, masterMode: Boolean = false) {
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
