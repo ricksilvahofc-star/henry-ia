@@ -7,6 +7,7 @@ import com.henryia.app.ai.AiRouter
 import com.henryia.app.ai.OpenRouterProvider
 import com.henryia.app.ai.LocalTools
 import com.henryia.app.ai.MasterPlanner
+import com.henryia.app.ai.MasterProjectGenerator
 import com.henryia.app.ai.WebLookup
 import com.henryia.app.core.ApiKeyStore
 import com.henryia.app.core.ConversationStore
@@ -28,6 +29,7 @@ class HenryViewModel(app: Application) : AndroidViewModel(app) {
     private val store = ConversationStore(app)
     private val memoryStore = MemoryStore(app)
     private val masterModeStore = MasterModeStore(app)
+    private val masterProjectGenerator = MasterProjectGenerator(router)
 
     private val _conversations = MutableStateFlow(store.load())
     val conversations: StateFlow<List<ChatConversation>> = _conversations.asStateFlow()
@@ -109,12 +111,22 @@ class HenryViewModel(app: Application) : AndroidViewModel(app) {
                         """.trimIndent()
                     } else clean
                     val masterPlan = if (masterMode) MasterPlanner.detect(clean) else null
-                    val finalPrompt = if (masterPlan != null) {
-                        MasterPlanner.promptFor(masterPlan, clean)
-                    } else if (masterMode) {
-                        "Você está no Modo Mestre do Henry. Seja proativo em tarefas de criação e engenharia. Pedido: $prompt"
-                    } else prompt
-                    router.generate(finalPrompt, context, attachments)
+                    if (masterPlan != null && attachments.isEmpty()) {
+                        val project = masterProjectGenerator.generate(masterPlan, clean, context)
+                        if (project != null) {
+                            val fileSummary = project.files.joinToString("\n") { "• " + it.path }
+                            "👑 Projeto criado: " + project.name + "\n\n" + project.description +
+                                "\n\nArquivos gerados (" + project.files.size + "):\n" + fileSummary +
+                                "\n\nO conteúdo dos arquivos foi estruturado pelo Modo Mestre e está pronto para a próxima etapa de exportação/edição."
+                        } else {
+                            router.generate(MasterPlanner.promptFor(masterPlan, clean), context, attachments)
+                        }
+                    } else {
+                        val finalPrompt = if (masterMode) {
+                            "Você está no Modo Mestre do Henry. Seja proativo em tarefas de criação e engenharia. Pedido: " + prompt
+                        } else prompt
+                        router.generate(finalPrompt, context, attachments)
+                    }
                 }
 
                 _messages.value = _messages.value + ChatMessage(nextId++, MessageRole.HENRY, answer)
