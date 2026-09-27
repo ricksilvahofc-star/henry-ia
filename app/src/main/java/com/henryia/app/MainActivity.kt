@@ -80,11 +80,15 @@ private fun HenryApp(vm: HenryViewModel = viewModel()) {
     var input by remember { mutableStateOf("") }
     var settingsOpen by remember { mutableStateOf(false) }
     var webEnabled by remember { mutableStateOf(false) }
-    var listening by remember { mutableStateOf(false) }\n    var attachments by remember { mutableStateOf<List<Attachment>>(emptyList()) }
+    var listening by remember { mutableStateOf(false) }
+    var attachments by remember { mutableStateOf<List<Attachment>>(emptyList()) }
     val context = LocalContext.current
     val voiceController = remember { VoiceController(context) }
     val speaker = remember { HenrySpeaker(context) }
-    val fileLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->\n        uri?.let { prepareAttachment(context, it)?.let { item -> attachments = (attachments + item).takeLast(4) } }\n    }\n    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+    val fileLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let { prepareAttachment(context, it)?.let { item -> attachments = (attachments + item).takeLast(4) } }
+    }
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) {
             listening = true
             voiceController.start(
@@ -158,7 +162,8 @@ private fun HenryApp(vm: HenryViewModel = viewModel()) {
         if (settingsOpen) {
             SettingsDialog(
                 currentKey = if (vm.hasApiKey()) "saved" else "",
-                memoryCount = vm.memoryCount(),\n                onClearMemory = { vm.clearMemory() },
+                memoryCount = vm.memoryCount(),
+                onClearMemory = { vm.clearMemory() },
                 onSave = { vm.saveApiKey(it); settingsOpen = false },
                 onDismiss = { settingsOpen = false }
             )
