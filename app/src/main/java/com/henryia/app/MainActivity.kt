@@ -393,6 +393,15 @@ private fun HenryDrawer(conversations: List<com.henryia.app.core.model.ChatConve
             Spacer(Modifier.weight(1f))
 
             Row(
+                Modifier.fillMaxWidth().clickable { onProjects() }.padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Default.AutoAwesome, null, tint = HenryCyan)
+                Spacer(Modifier.width(10.dp))
+                Text("Projetos do Modo Mestre", color = Color.LightGray)
+            }
+
+            Row(
                 Modifier.fillMaxWidth().clickable { onSettings() }.padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -404,6 +413,34 @@ private fun HenryDrawer(conversations: List<com.henryia.app.core.model.ChatConve
     }
 }
 
+
+@Composable
+private fun ProjectsDialog(
+    projects: List<GeneratedProject>,
+    onClear: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Projetos do Modo Mestre") },
+        text = {
+            if (projects.isEmpty()) Text("Ainda não há projetos criados.")
+            else Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                projects.forEach { project ->
+                    Surface(color = HenryBubble, shape = RoundedCornerShape(12.dp)) {
+                        Column(Modifier.fillMaxWidth().padding(12.dp)) {
+                            Text(project.name, fontWeight = FontWeight.Bold, color = HenryCyan)
+                            Text(project.description, color = Color.LightGray, fontSize = 12.sp)
+                            Text(project.files.joinToString(", ") { it.path }, color = Color.Gray, fontSize = 11.sp)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onClear, enabled = projects.isNotEmpty()) { Text("Apagar projetos") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Fechar") } }
+    )
+}
 
 @Composable
 private fun SettingsDialog(
