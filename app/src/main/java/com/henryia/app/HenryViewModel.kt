@@ -21,7 +21,7 @@ class HenryViewModel(app: Application) : AndroidViewModel(app) {
     private val keyStore = ApiKeyStore(app)
     private val router = AiRouter(listOf(OpenRouterProvider { keyStore.getOpenRouterKey() }))
     private val webLookup = WebLookup()
-    private val store = ConversationStore(app)
+    private val store = ConversationStore(app)\n    private val memoryStore = MemoryStore(app)
 
     private val _conversations = MutableStateFlow(store.load())
     val conversations: StateFlow<List<ChatConversation>> = _conversations.asStateFlow()
@@ -45,7 +45,7 @@ class HenryViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun hasApiKey(): Boolean = keyStore.getOpenRouterKey().isNotBlank()
-    fun saveApiKey(key: String) = keyStore.setOpenRouterKey(key)
+    fun saveApiKey(key: String) = keyStore.setOpenRouterKey(key)\n    fun memoryCount(): Int = memoryStore.load().size\n    fun clearMemory() = memoryStore.clear()
 
     fun newChat() {
         createConversation()
@@ -71,7 +71,7 @@ class HenryViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             _isGenerating.value = true
             try {
-                val context = _messages.value.dropLast(1).takeLast(10).map { it.text }
+                rememberIfRequested(clean)\n                val context = _messages.value.dropLast(1).takeLast(10).map { it.text }
                 val webResult = if (forceWeb || isWebRequest(clean)) webLookup.search(clean) else ""
 
                 val answer = if (!hasApiKey() && webResult.isNotBlank() && attachments.isEmpty()) {
@@ -133,7 +133,7 @@ class HenryViewModel(app: Application) : AndroidViewModel(app) {
     private fun initialMessages(): List<ChatMessage> =
         listOf(ChatMessage(1L, MessageRole.HENRY, "Olá! Eu sou o Henry. Como posso ajudar?"))
 
-    private fun isWebRequest(text: String): Boolean {
+    private fun rememberIfRequested(text: String) {\n        val lower = text.lowercase()\n        if (lower.startsWith("lembre que ") || lower.startsWith("lembre:") || lower.startsWith("memorize ")) {\n            val fact = text.substringAfter(" ", "").trim().removePrefix("que ").removePrefix(":").trim()\n            if (fact.isNotBlank()) memoryStore.add(fact)\n        }\n    }\n\n    private fun isWebRequest(text: String): Boolean {
         val query = text.lowercase()
         val triggers = listOf(
             "pesquise", "pesquisar", "pesquisa", "procure", "procurar",
