@@ -8,6 +8,7 @@ import com.henryia.app.ai.OpenRouterProvider
 import com.henryia.app.ai.WebLookup
 import com.henryia.app.core.ApiKeyStore
 import com.henryia.app.core.ConversationStore
+import com.henryia.app.core.MemoryStore
 import com.henryia.app.core.model.Attachment
 import com.henryia.app.core.model.ChatConversation
 import com.henryia.app.core.model.ChatMessage
