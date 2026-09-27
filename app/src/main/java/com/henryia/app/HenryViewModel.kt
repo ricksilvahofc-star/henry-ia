@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.henryia.app.ai.AiRouter
 import com.henryia.app.ai.OpenRouterProvider
+import com.henryia.app.ai.LocalTools
 import com.henryia.app.ai.WebLookup
 import com.henryia.app.core.ApiKeyStore
 import com.henryia.app.core.ConversationStore
@@ -74,6 +75,11 @@ class HenryViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             _isGenerating.value = true
             try {
+                LocalTools.tryCalculate(clean)?.let { result ->
+                    _messages.value = _messages.value + ChatMessage(nextId++, MessageRole.HENRY, result)
+                    updateActive()
+                    return@launch
+                }
                 rememberIfRequested(clean)
                 val context = _messages.value.dropLast(1).takeLast(10).map { it.text }
                 val webResult = if (forceWeb || isWebRequest(clean)) webLookup.search(clean) else ""
