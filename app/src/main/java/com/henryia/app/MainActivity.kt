@@ -202,13 +202,33 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-object GeminiClient {
+interface AiProvider {
+    val name: String
+
+    suspend fun generateResponse(
+        apiKey: String,
+        messages: List<Message>
+    ): Result<String>
+}
+
+object AiRouter {
+    private val gemini = GeminiProvider
+
+    fun chooseProvider(message: String): AiProvider {
+        // Futuramente o Henry poderá escolher automaticamente entre
+        // Gemini, outros modelos, pesquisa, código, imagem e ferramentas.
+        return gemini
+    }
+}
+
+object GeminiProvider : AiProvider {
+    override val name = "Gemini"
 
     private const val MODEL = "gemini-2.5-flash-lite"
     private const val ENDPOINT =
         "https://generativelanguage.googleapis.com/v1beta/models/$MODEL:generateContent"
 
-    suspend fun generateResponse(
+    override suspend fun generateResponse(
         apiKey: String,
         messages: List<Message>
     ): Result<String> = withContext(Dispatchers.IO) {
@@ -287,5 +307,16 @@ object GeminiClient {
 
             text.trim()
         }
+    }
+}
+
+object GeminiClient {
+    suspend fun generateResponse(
+        apiKey: String,
+        messages: List<Message>
+    ): Result<String> {
+        return AiRouter.chooseProvider(
+            messages.lastOrNull { it.fromUser }?.text.orEmpty()
+        ).generateResponse(apiKey, messages)
     }
 }
