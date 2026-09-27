@@ -8,6 +8,7 @@ import com.henryia.app.ai.OpenRouterProvider
 import com.henryia.app.ai.WebLookup
 import com.henryia.app.core.ApiKeyStore
 import com.henryia.app.core.ConversationStore
+import com.henryia.app.core.model.Attachment
 import com.henryia.app.core.model.ChatConversation
 import com.henryia.app.core.model.ChatMessage
 import com.henryia.app.core.model.MessageRole
@@ -58,11 +59,11 @@ class HenryViewModel(app: Application) : AndroidViewModel(app) {
         nextId = (_messages.value.maxOfOrNull { it.id } ?: 0L) + 1L
     }
 
-    fun send(text: String, forceWeb: Boolean = false) {
+    fun send(text: String, forceWeb: Boolean = false, attachments: List<Attachment> = emptyList()) {
         val clean = text.trim()
         if (clean.isEmpty() || _isGenerating.value) return
 
-        val userMessage = ChatMessage(nextId++, MessageRole.USER, clean)
+        val attachmentNote = if (attachments.isEmpty()) "" else "\n\n📎 " + attachments.joinToString(", ") { it.name }\n\nval userMessage = ChatMessage(nextId++, MessageRole.USER, clean + attachmentNote)
         _messages.value = _messages.value + userMessage
         updateActive(title = titleFor(clean))
         
@@ -72,7 +73,7 @@ class HenryViewModel(app: Application) : AndroidViewModel(app) {
                 val context = _messages.value.dropLast(1).takeLast(10).map { it.text }
                 val webResult = if (forceWeb || isWebRequest(clean)) webLookup.search(clean) else ""
 
-                val answer = if (!hasApiKey() && webResult.isNotBlank()) {
+                val answer = if (!hasApiKey() && webResult.isNotBlank() && attachments.isEmpty()) {
                     "Pesquisei na web e encontrei isto:\n\n$webResult"
                 } else {
                     val prompt = if (webResult.isNotBlank()) {
@@ -88,7 +89,7 @@ class HenryViewModel(app: Application) : AndroidViewModel(app) {
                         $webResult
                         """.trimIndent()
                     } else clean
-                    router.generate(prompt, context)
+                    router.generate(prompt, context, attachments)
                 }
 
                 _messages.value = _messages.value + ChatMessage(nextId++, MessageRole.HENRY, answer)
