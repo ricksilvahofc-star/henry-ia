@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -82,6 +83,7 @@ private fun HenryApp(vm: HenryViewModel = viewModel()) {
     var webEnabled by remember { mutableStateOf(false) }
     var listening by remember { mutableStateOf(false) }
     var attachments by remember { mutableStateOf<List<Attachment>>(emptyList()) }
+    var masterMode by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val voiceController = remember { VoiceController(context) }
     val speaker = remember { HenrySpeaker(context) }
@@ -92,7 +94,19 @@ private fun HenryApp(vm: HenryViewModel = viewModel()) {
         if (granted) {
             listening = true
             voiceController.start(
-                onResult = { spoken -> input = spoken; listening = false },
+                onResult = { spoken ->
+                    listening = false
+                    val normalized = spoken.trim()
+                    if (vm.verifyMasterPassword(normalized)) {
+                        masterMode = true
+                        input = ""
+                    } else if (masterMode && normalized.equals("desativar modo mestre", ignoreCase = true)) {
+                        masterMode = false
+                        input = ""
+                    } else {
+                        input = spoken
+                    }
+                },
                 onError = { listening = false }
             )
         }
@@ -145,7 +159,7 @@ private fun HenryApp(vm: HenryViewModel = viewModel()) {
                 value = input,
                 onValueChange = { input = it },
                 onSend = {
-                    vm.send(input, forceWeb = webEnabled, attachments = attachments)
+                    vm.send(input, forceWeb = webEnabled, attachments = attachments, masterMode = masterMode)
                     input = ""
                     attachments = emptyList()
                 },
@@ -163,8 +177,11 @@ private fun HenryApp(vm: HenryViewModel = viewModel()) {
             SettingsDialog(
                 currentKey = if (vm.hasApiKey()) "saved" else "",
                 memoryCount = vm.memoryCount(),
+                masterPasswordSet = vm.hasMasterPassword(),
                 onClearMemory = { vm.clearMemory() },
                 onSave = { vm.saveApiKey(it); settingsOpen = false },
+                onSaveMasterPassword = { vm.setMasterPassword(it) },
+                onClearMasterPassword = { vm.clearMasterPassword(); masterMode = false },
                 onDismiss = { settingsOpen = false }
             )
         }
@@ -180,7 +197,7 @@ private fun TopBar(onMenu: () -> Unit) {
         IconButton(onClick = onMenu) { Icon(Icons.Default.Menu, "Menu") }
         Column(Modifier.weight(1f).padding(start = 4.dp)) {
             Text("Henry", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            Text("Assistente de IA", color = Color.LightGray, fontSize = 12.sp)
+            Text(if (masterMode) "👑 Modo Mestre ativo" else "Assistente de IA", color = if (masterMode) HenryCyan else Color.LightGray, fontSize = 12.sp)
         }
         Text("●", color = HenryCyan, fontSize = 18.sp)
     }
@@ -378,11 +395,15 @@ private fun HenryDrawer(conversations: List<com.henryia.app.core.model.ChatConve
 private fun SettingsDialog(
     currentKey: String,
     memoryCount: Int = 0,
+    masterPasswordSet: Boolean = false,
     onClearMemory: () -> Unit = {},
     onSave: (String) -> Unit,
+    onSaveMasterPassword: (String) -> Unit = {},
+    onClearMasterPassword: () -> Unit = {},
     onDismiss: () -> Unit
 ) {
     var key by remember { mutableStateOf("") }
+    var masterPassword by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Configurações do Henry") },
@@ -405,6 +426,22 @@ private fun SettingsDialog(
                 Text("O Henry só grava uma memória quando você pedir com “lembre que...”.", color = Color.Gray, fontSize = 12.sp)
                 TextButton(onClick = onClearMemory, enabled = memoryCount > 0) {
                     Text("Apagar memórias")
+                }
+                HorizontalDivider()
+                Text("👑 Modo Mestre", fontWeight = FontWeight.Bold, color = HenryCyan)
+                Text("Defina uma senha. Depois, fale a senha no botão de voz para ativar o modo Mestre.", color = Color.Gray, fontSize = 12.sp)
+                OutlinedTextField(
+                    value = masterPassword,
+                    onValueChange = { masterPassword = it },
+                    label = { Text("Senha do Modo Mestre") },
+                    singleLine = true
+                )
+                if (masterPasswordSet) {
+                    Text("Senha do Modo Mestre configurada neste aparelho.", color = Color.Gray, fontSize = 12.sp)
+                    TextButton(onClick = onClearMasterPassword) { Text("Remover senha") }
+                }
+                TextButton(onClick = { if (masterPassword.isNotBlank()) { onSaveMasterPassword(masterPassword); masterPassword = "" } }, enabled = masterPassword.isNotBlank()) {
+                    Text("Salvar senha do Modo Mestre")
                 }
             }
         },
