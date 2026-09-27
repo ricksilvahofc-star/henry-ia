@@ -7,35 +7,55 @@ import com.henryia.app.ai.AiRouter
 import com.henryia.app.ai.OpenRouterProvider
 import com.henryia.app.ai.WebLookup
 import com.henryia.app.core.ApiKeyStore
+import com.henryia.app.core.ConversationStore
+import com.henryia.app.core.model.ChatConversation
 import com.henryia.app.core.model.ChatMessage
 import com.henryia.app.core.model.MessageRole
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import org.json.JSONArray
-import org.json.JSONObject
 
 class HenryViewModel(app: Application) : AndroidViewModel(app) {
     private val keyStore = ApiKeyStore(app)
-    private val prefs = app.getSharedPreferences("henry_chat", 0)
     private val router = AiRouter(listOf(OpenRouterProvider { keyStore.getOpenRouterKey() }))
     private val webLookup = WebLookup()
-    private var nextId = 1L
+    private val store = ConversationStore(app)
 
-    private val _messages = MutableStateFlow(loadMessages())
+    private val _conversations = MutableStateFlow(store.load())
+    val conversations: StateFlow<List<ChatConversation>> = _conversations.asStateFlow()
+
+    private val _activeId = MutableStateFlow(_conversations.value.firstOrNull()?.id ?: 1L)
+    val activeId: StateFlow<Long> = _activeId.asStateFlow()
+
+    private val _messages = MutableStateFlow(activeConversation()?.messages ?: initialMessages())
     val messages: StateFlow<List<ChatMessage>> = _messages.asStateFlow()
 
     private val _isGenerating = MutableStateFlow(false)
     val isGenerating: StateFlow<Boolean> = _isGenerating.asStateFlow()
 
+    private var nextId = _messages.value.maxOfOrNull { it.id }?.plus(1) ?: 2L
+    private var nextConversationId = _conversations.value.maxOfOrNull { it.id }?.plus(1) ?: 1L
+
+    init {
+        if (_conversations.value.isEmpty()) {
+            createConversation()
+        }
+    }
+
     fun hasApiKey(): Boolean = keyStore.getOpenRouterKey().isNotBlank()
     fun saveApiKey(key: String) = keyStore.setOpenRouterKey(key)
 
     fun newChat() {
-        nextId = 2L
-        _messages.value = listOf(ChatMessage(1L, MessageRole.HENRY, "Nova conversa iniciada. O que vamos fazer?"))
-        persist()
+        createConversation()
+    }
+
+    fun selectConversation(id: Long) {
+        if (_isGenerating.value) return
+        val conversation = _conversations.value.firstOrNull { it.id == id } ?: return
+        _activeId.value = id
+        _messages.value = conversation.messages
+        nextId = (_messages.value.maxOfOrNull { it.id } ?: 0L) + 1L
     }
 
     fun send(text: String, forceWeb: Boolean = false) {
@@ -44,8 +64,8 @@ class HenryViewModel(app: Application) : AndroidViewModel(app) {
 
         val userMessage = ChatMessage(nextId++, MessageRole.USER, clean)
         _messages.value = _messages.value + userMessage
-        persist()
-
+        updateActive(title = titleFor(clean))
+        
         viewModelScope.launch {
             _isGenerating.value = true
             try {
@@ -67,19 +87,49 @@ class HenryViewModel(app: Application) : AndroidViewModel(app) {
                         Dados da consulta web:
                         $webResult
                         """.trimIndent()
-                    } else {
-                        clean
-                    }
+                    } else clean
                     router.generate(prompt, context)
                 }
 
                 _messages.value = _messages.value + ChatMessage(nextId++, MessageRole.HENRY, answer)
-                persist()
+                updateActive()
             } finally {
                 _isGenerating.value = false
             }
         }
     }
+
+    private fun createConversation() {
+        val id = nextConversationId++
+        val conversation = ChatConversation(id, "Nova conversa", initialMessages())
+        _conversations.value = listOf(conversation) + _conversations.value
+        _activeId.value = id
+        _messages.value = conversation.messages
+        nextId = 2L
+        store.save(_conversations.value)
+    }
+
+    private fun updateActive(title: String? = null) {
+        val updated = _conversations.value.map { conversation ->
+            if (conversation.id == _activeId.value) {
+                conversation.copy(
+                    title = title ?: conversation.title,
+                    messages = _messages.value
+                )
+            } else conversation
+        }
+        _conversations.value = updated
+        store.save(updated)
+    }
+
+    private fun activeConversation(): ChatConversation? =
+        _conversations.value.firstOrNull { it.id == _activeId.value }
+
+    private fun titleFor(text: String): String =
+        text.replace(Regex("\\s+"), " ").trim().take(32).ifBlank { "Nova conversa" }
+
+    private fun initialMessages(): List<ChatMessage> =
+        listOf(ChatMessage(1L, MessageRole.HENRY, "Olá! Eu sou o Henry. Como posso ajudar?"))
 
     private fun isWebRequest(text: String): Boolean {
         val query = text.lowercase()
@@ -89,41 +139,5 @@ class HenryViewModel(app: Application) : AndroidViewModel(app) {
             "noticia", "atualizado", "atualizada", "hoje", "agora"
         )
         return triggers.any { query.contains(it) }
-    }
-
-    private fun loadMessages(): List<ChatMessage> {
-        val raw = prefs.getString("messages", null) ?: return listOf(
-            ChatMessage(1L, MessageRole.HENRY, "Olá! Eu sou o Henry. Como posso ajudar?")
-        )
-        return runCatching {
-            val array = JSONArray(raw)
-            buildList {
-                for (i in 0 until array.length()) {
-                    val item = array.getJSONObject(i)
-                    add(
-                        ChatMessage(
-                            item.getLong("id"),
-                            MessageRole.valueOf(item.getString("role")),
-                            item.getString("text")
-                        )
-                    )
-                }
-            }.also { list -> nextId = (list.maxOfOrNull { it.id } ?: 0L) + 1L }
-        }.getOrElse {
-            listOf(ChatMessage(1L, MessageRole.HENRY, "Olá! Eu sou o Henry. Como posso ajudar?"))
-        }
-    }
-
-    private fun persist() {
-        val array = JSONArray()
-        _messages.value.forEach {
-            array.put(
-                JSONObject()
-                    .put("id", it.id)
-                    .put("role", it.role.name)
-                    .put("text", it.text)
-            )
-        }
-        prefs.edit().putString("messages", array.toString()).apply()
     }
 }
