@@ -13,7 +13,7 @@ class MemoryStore(context: Context) {
         if (clean.isBlank()) return
         val current = load().toMutableSet()
         current.add(clean)
-        prefs.edit().putStringSet("facts", current.takeLast(100).toSet()).apply()
+        prefs.edit().putStringSet("facts", current.toList().takeLast(100).toSet()).apply()
     }
 
     fun clear() {
