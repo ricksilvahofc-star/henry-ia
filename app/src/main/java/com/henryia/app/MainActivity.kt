@@ -70,6 +70,7 @@ private fun HenryTheme(content: @Composable () -> Unit) {
 private fun HenryApp(vm: HenryViewModel = viewModel()) {
     val messages by vm.messages.collectAsState()
     val isGenerating by vm.isGenerating.collectAsState()
+    val conversations by vm.conversations.collectAsState()
     var drawerOpen by remember { mutableStateOf(false) }
     var input by remember { mutableStateOf("") }
     var settingsOpen by remember { mutableStateOf(false) }
@@ -105,6 +106,9 @@ private fun HenryApp(vm: HenryViewModel = viewModel()) {
     Row(Modifier.fillMaxSize().background(HenryDark)) {
         if (drawerOpen) {
             HenryDrawer(
+                conversations = conversations,
+                activeId = vm.activeId.collectAsState().value,
+                onSelect = { vm.selectConversation(it); drawerOpen = false },
                 onNewChat = { vm.newChat(); drawerOpen = false },
                 onClose = { drawerOpen = false },
                 onSettings = { drawerOpen = false; settingsOpen = true }
@@ -282,7 +286,7 @@ private fun ThinkingBubble() {
 }
 
 @Composable
-private fun HenryDrawer(onNewChat: () -> Unit, onClose: () -> Unit, onSettings: () -> Unit) {
+private fun HenryDrawer(conversations: List<com.henryia.app.core.model.ChatConversation>, activeId: Long, onSelect: (Long) -> Unit, onNewChat: () -> Unit, onClose: () -> Unit, onSettings: () -> Unit) {
     Surface(
         color = Color(0xFF0C1017),
         modifier = Modifier.width(285.dp).fillMaxHeight()
@@ -305,16 +309,23 @@ private fun HenryDrawer(onNewChat: () -> Unit, onClose: () -> Unit, onSettings: 
             }
 
             Text("Conversas", color = Color.Gray, modifier = Modifier.padding(8.dp))
-            Surface(
-                color = HenryBubble,
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth().clickable { }
+            LazyColumn(
+                modifier = Modifier.weight(1f, fill = false),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Text(
-                    "Nova conversa",
-                    modifier = Modifier.padding(14.dp),
-                    maxLines = 1
-                )
+                items(conversations, key = { it.id }) { conversation ->
+                    Surface(
+                        color = if (conversation.id == activeId) HenryBubble else Color.Transparent,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth().clickable { onSelect(conversation.id) }
+                    ) {
+                        Text(
+                            conversation.title,
+                            modifier = Modifier.padding(14.dp),
+                            maxLines = 1
+                        )
+                    }
+                }
             }
 
             Spacer(Modifier.weight(1f))
