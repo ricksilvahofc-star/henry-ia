@@ -58,6 +58,7 @@ private fun HenryTheme(content: @Composable () -> Unit) {
 @Composable
 private fun HenryApp(vm: HenryViewModel = viewModel()) {
     val messages by vm.messages.collectAsState()
+    val isGenerating by vm.isGenerating.collectAsState()
     var drawerOpen by remember { mutableStateOf(false) }
     var input by remember { mutableStateOf("") }
     var settingsOpen by remember { mutableStateOf(false) }
@@ -85,6 +86,7 @@ private fun HenryApp(vm: HenryViewModel = viewModel()) {
                 items(messages, key = { it.id }) { message ->
                     MessageBubble(message.role, message.text)
                 }
+                if (isGenerating) { item { ThinkingBubble() } }
             }
 
             Composer(
@@ -93,7 +95,8 @@ private fun HenryApp(vm: HenryViewModel = viewModel()) {
                 onSend = {
                     vm.send(input)
                     input = ""
-                }
+                },
+                enabled = !isGenerating
             )
         }
         if (settingsOpen) {
@@ -163,7 +166,8 @@ private fun MessageBubble(role: MessageRole, text: String) {
 private fun Composer(
     value: String,
     onValueChange: (String) -> Unit,
-    onSend: () -> Unit
+    onSend: () -> Unit,
+    enabled: Boolean = true
 ) {
     Surface(
         color = HenryPanel,
@@ -193,9 +197,22 @@ private fun Composer(
             }
             IconButton(
                 onClick = onSend,
-                enabled = value.isNotBlank()
+                enabled = value.isNotBlank() && enabled
             ) {
                 Icon(Icons.Default.Send, "Enviar", tint = HenryCyan)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ThinkingBubble() {
+    Row(Modifier.fillMaxWidth()) {
+        Surface(color = HenryBubble, shape = RoundedCornerShape(18.dp)) {
+            Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = HenryCyan)
+                Spacer(Modifier.width(10.dp))
+                Text("Henry está pensando...", color = Color.LightGray, fontSize = 14.sp)
             }
         }
     }
