@@ -153,7 +153,7 @@ private fun HenryApp(vm: HenryViewModel = viewModel()) {
         }
         if (settingsOpen) {
             SettingsDialog(
-                currentKey = if (vm.hasApiKey()) "saved" else "",
+                currentKey = if (vm.hasApiKey()) "saved" else "",\n                memoryCount = vm.memoryCount(),\n                onClearMemory = { vm.clearMemory() },
                 onSave = { vm.saveApiKey(it); settingsOpen = false },
                 onDismiss = { settingsOpen = false }
             )
@@ -371,7 +371,7 @@ private fun SettingsDialog(
                 if (currentKey.isNotBlank()) {
                     Text("Uma chave já está salva neste aparelho.", color = Color.Gray, fontSize = 12.sp)
                 }
-                Text("A chave fica salva apenas no armazenamento local do aplicativo.", color = Color.Gray, fontSize = 12.sp)
+                Text("A chave fica salva apenas no armazenamento local do aplicativo.", color = Color.Gray, fontSize = 12.sp)\n                HorizontalDivider()\n                Text("Memória do Henry: $memoryCount item(ns)", fontWeight = FontWeight.Bold)\n                Text("O Henry só grava uma memória quando você pedir com frases como “lembre que...”.", color = Color.Gray, fontSize = 12.sp)\n                TextButton(onClick = onClearMemory, enabled = memoryCount > 0) { Text("Apagar memórias") }
             }
         },
         confirmButton = {
