@@ -63,7 +63,8 @@ class HenryViewModel(app: Application) : AndroidViewModel(app) {
         val clean = text.trim()
         if (clean.isEmpty() || _isGenerating.value) return
 
-        val attachmentNote = if (attachments.isEmpty()) "" else "\n\n📎 " + attachments.joinToString(", ") { it.name }\n\nval userMessage = ChatMessage(nextId++, MessageRole.USER, clean + attachmentNote)
+        val attachmentNote = if (attachments.isEmpty()) "" else "\n\n📎 " + attachments.joinToString(", ") { it.name }\n"
+        val userMessage = ChatMessage(nextId++, MessageRole.USER, clean + attachmentNote)
         _messages.value = _messages.value + userMessage
         updateActive(title = titleFor(clean))
         
