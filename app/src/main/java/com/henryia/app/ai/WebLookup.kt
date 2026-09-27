@@ -16,7 +16,7 @@ class WebLookup {
 
         val encoded = URLEncoder.encode(clean, "UTF-8")
         val url = URL(
-            "https://api.duckduckgo.com/?q=$" + "encoded&format=json&no_html=1&skip_disambig=1&no_redirect=1"
+            "https://api.duckduckgo.com/?q=" + encoded + "&format=json&no_html=1&skip_disambig=1&no_redirect=1"
         )
 
         val connection = (url.openConnection() as HttpURLConnection)
@@ -28,7 +28,7 @@ class WebLookup {
             connection.setRequestProperty("User-Agent", "Henry-IA/0.1")
 
             val status = connection.responseCode
-            if (status !in 200..299) return@withContext "A consulta à web falhou (HTTP $" + "status)."
+            if (status !in 200..299) return@withContext "A consulta à web falhou (HTTP " + status + ")."
 
             val body = connection.inputStream.bufferedReader().use { it.readText() }
             val json = JSONObject(body)
