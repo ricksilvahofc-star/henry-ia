@@ -38,7 +38,7 @@ class HenryViewModel(app: Application) : AndroidViewModel(app) {
         persist()
     }
 
-    fun send(text: String) {
+    fun send(text: String, forceWeb: Boolean = false) {
         val clean = text.trim()
         if (clean.isEmpty() || _isGenerating.value) return
 
@@ -50,7 +50,7 @@ class HenryViewModel(app: Application) : AndroidViewModel(app) {
             _isGenerating.value = true
             try {
                 val context = _messages.value.dropLast(1).takeLast(10).map { it.text }
-                val webResult = if (isWebRequest(clean)) webLookup.search(clean) else ""
+                val webResult = if (forceWeb || isWebRequest(clean)) webLookup.search(clean) else ""
 
                 val answer = if (!hasApiKey() && webResult.isNotBlank()) {
                     "Pesquisei na web e encontrei isto:\n\n$webResult"
