@@ -216,8 +216,6 @@ object AiRouter {
     private val gemini = GeminiProvider
 
     fun chooseProvider(message: String): AiProvider {
-        // Futuramente o Henry poderá escolher automaticamente entre
-        // Gemini, outros modelos, pesquisa, código, imagem e ferramentas.
         return gemini
     }
 }
@@ -294,7 +292,9 @@ object GeminiProvider : AiProvider {
             connection.disconnect()
 
             if (status !in 200..299) {
-                throw IllegalStateException("API Gemini retornou HTTP $status")
+                throw IllegalStateException(
+                    "API Gemini retornou HTTP $status: ${responseText.take(500)}"
+                )
             }
 
             val json = JSONObject(responseText)
