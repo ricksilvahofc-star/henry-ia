@@ -1,0 +1,153 @@
+HENRY WESTERN — PROJECT MEMORY
+================================
+
+Purpose
+-------
+This file is persistent project context for continuing development of Henry Western. Read it before making major architectural changes so previous decisions are preserved.
+
+OWNER / WORKFLOW
+----------------
+- Project repository: ricksilvahofc-star/henry-ia
+- Game name: Henry Western
+- Development is being done primarily from a mobile phone.
+- GitHub is the main source of truth for the project.
+- Do not depend on Replit for development.
+- User prefers direct execution and concise status updates rather than long step-by-step instructions.
+- User wants to be informed when a genuinely verified first version is finished.
+
+CORE GAME DIRECTION
+-------------------
+- Single-player only.
+- Offline gameplay: the installed game must not require an internet connection to play.
+- Internet may be needed only to download/install updates or the APK.
+- No multiplayer system is planned.
+- The user wants the game to be ambitious, large and detailed, using Red Dead Redemption only as a high-level quality/reference point, never copying its copyrighted assets, characters, maps, names, missions or other protected content.
+- The game should use original content and assets with compatible licenses when external assets are used.
+- The user explicitly does not want a tiny 2D prototype to become the final V1.
+- V1 direction is 3D from the start.
+
+V1 SCOPE REQUESTED BY USER
+--------------------------
+The first substantial version should aim to include the major systems already discussed rather than postponing them to later versions:
+- Large 3D western world.
+- Town/city areas, rural areas, ranch, mine and bandit areas.
+- Detailed terrain, roads, rivers, mountains and environmental scenery.
+- Playable 3D character.
+- Horse and mounted movement.
+- Combat and shooting.
+- Enemies/bandits.
+- Health/damage.
+- Wanted/law system foundation.
+- NPCs and interaction.
+- Missions and objectives.
+- Shops.
+- Weapon buying/selling.
+- Inventory.
+- Money/economy.
+- HUD and mobile controls.
+- Save/load should be part of the eventual single-player architecture.
+- No multiplayer.
+
+IMPORTANT QUALITY RULE
+----------------------
+Do not declare V1 complete just because the project builds. A successful APK build proves packaging, not that the requested gameplay is complete. Completion should be based on verified implementation of the planned systems and a successful build.
+
+HISTORY / PREVIOUS DEVELOPMENT
+------------------------------
+1. The project originally began as a 2D Godot prototype.
+2. The 2D prototype had a desert, Dusty Creek, shooting, enemies, health, money, wanted level, horse/mission concepts and touch controls.
+3. The old 2D gameplay scripts were later removed because the user decided the final direction must be 3D.
+4. The repository was migrated toward a Godot 3D foundation.
+5. A larger 2D map had previously been planned with Dusty Creek, Rancho Red Rock, Black Ridge Mine and a bandit camp. These locations remain useful as world-design concepts, but the final implementation should be 3D.
+6. Original SVG placeholder textures were created during the 2D phase. Do not depend on them for the final 3D art direction unless deliberately reused as references/materials.
+7. External asset sources were researched. Free-to-download does NOT automatically mean free to redistribute/use. Prefer CC0 or clearly compatible licenses and keep an asset/license record when external assets are integrated.
+8. A previous Android build failed because Godot Android export templates were missing. The workflow was subsequently changed to install Android export templates.
+
+CURRENT 3D FOUNDATION
+---------------------
+The main scene is now Node3D and points to scripts/main_3d.gd.
+Current foundation includes:
+- WorldEnvironment.
+- Directional sun light with shadows.
+- Ground PlaneMesh.
+- Third-person Camera3D.
+- CharacterBody3D player.
+- Placeholder western locations generated from original 3D primitives.
+- Placeholder sheriff, horse and mission target markers.
+- Player movement and camera following in main_3d.gd.
+- Money, health, wanted, mounted and mission-state variables exist as initial architecture.
+
+CURRENT WORLD PLACEHOLDERS
+--------------------------
+The current 3D foundation has placeholder geometry for:
+- Dusty Creek saloon.
+- Dusty Creek store.
+- Rancho Red Rock.
+- Black Ridge Mine.
+- Bandit Camp.
+- Sheriff marker.
+- Horse marker.
+- Mission target marker.
+These are placeholders and must eventually become proper original 3D game content.
+
+LEGACY CLEANUP ALREADY DONE
+---------------------------
+- scripts/main.gd (old 2D main script) was removed.
+- scripts/gameplay_system.gd (old 2D gameplay script) was removed.
+- Some old 2D assets may still exist until confirmed safe to remove; do not delete potentially useful files blindly.
+
+CURRENT IMPORTANT FILES
+-----------------------
+- project.godot — Godot project configuration.
+- scenes/main.tscn — current 3D main scene.
+- scripts/main_3d.gd — current 3D gameplay foundation.
+- .github/workflows/build-apk.yml — Android APK build workflow.
+- HENRY_WESTERN_MEMORY.txt — this persistent project context file.
+
+ANDROID BUILD
+-------------
+The GitHub Actions workflow uses Godot 4.5.1 and Android export templates, then exports a debug APK named Henry-Western-Beta.apk and uploads it as an artifact.
+Do not say an APK is ready until the workflow actually succeeds and the artifact is confirmed.
+
+TECHNICAL DIRECTION
+--------------------
+- Godot 4.x.
+- Compatibility renderer is preferred for Android/mobile compatibility.
+- Keep the architecture modular: world/terrain, player, horse, combat, NPCs, missions, shops, inventory, economy, wanted/law, save/load and UI should be separable systems.
+- Avoid unnecessary online dependencies in the game runtime.
+- Favor performance-conscious 3D techniques suitable for Android while still pursuing a detailed world.
+- Build the world in scalable chunks/regions where useful rather than creating an unnecessarily expensive monolithic scene.
+
+ASSET / COPYRIGHT RULES
+-----------------------
+- Do not copy Red Dead Redemption assets, maps, characters, sounds, textures, models or other protected content.
+- External assets should have a license compatible with use and redistribution in the project.
+- CC0 is preferred when available.
+- Record important external asset sources/licenses in the repository.
+- Generated/original placeholder art is acceptable while systems are being built.
+
+DEVELOPMENT PRIORITY
+--------------------
+Recommended order after the 3D foundation:
+1. Validate the 3D scene and Android build.
+2. Proper player collision, mesh, camera and mobile controls.
+3. Terrain/world generation and scalable world regions.
+4. Original western environment/buildings and collision.
+5. Horse system and mounting/dismounting.
+6. Weapons, shooting, damage and enemy AI.
+7. NPC interaction and dialogue framework.
+8. Mission framework and objective tracking.
+9. Shops, weapons/equipment buying and selling, inventory and economy.
+10. Wanted/law system.
+11. HUD, menus and touch controls.
+12. Save/load.
+13. Optimization and Android testing.
+14. Full verification and APK build.
+
+USER PREFERENCE
+---------------
+The user often says to continue without waiting for approval. When a safe implementation decision is clear, proceed rather than repeatedly asking permission. Give concise status updates at meaningful milestones.
+
+MEMORY MAINTENANCE
+------------------
+This file is project memory, not a literal transcript of every conversation. When important architecture, requirements, corrections or decisions change, update this file so future development can resume accurately.
