@@ -1,0 +1,75 @@
+HENRY WESTERN — HISTÓRICO E CONTEXTO DO PROJETO
+Atualizado em 28/09/2026
+
+OBJETIVO
+Criar o Henry Western, um jogo mobile Android de Velho Oeste dentro do repositório existente `henry-ia`. O projeto deve evoluir para um mundo aberto grande, detalhado e expansível, com inspiração de escala/ambição em jogos como Red Dead/GTA, mas usando apenas conteúdo próprio ou assets com licença compatível. O usuário autorizou priorizar riqueza de conteúdo e detalhes, sem preocupação com o tamanho final do APK.
+
+REPOSITÓRIO E ESTRUTURA
+- Repositório: ricksilvahofc-star/henry-ia
+- Branch principal: main
+- Nome do jogo dentro do projeto: Henry Western
+- Cena principal mencionada: scenes/main.tscn
+- Motor: Godot
+- Alvo principal: Android
+- O projeto começou como uma base/protótipo e vem sendo expandido.
+
+O QUE JÁ FOI PLANEJADO/IMPLEMENTADO NO HISTÓRICO
+- Personagem jogável.
+- Movimentação.
+- Sistema de tiro.
+- Inimigos.
+- Vida.
+- Dinheiro.
+- Nível de procurado.
+- Cidade inicial chamada Dusty Creek.
+- Xerife/NPC.
+- Primeira missão completa: falar com o xerife, aceitar missão, localizar o procurado, voltar para Dusty Creek e receber recompensa de 50 dólares.
+- Cavalo, com velocidade maior quando montado.
+- Ação de interação.
+- HUD com objetivo da missão, recompensa e dinheiro.
+- Controles pensados para celular: lado esquerdo para movimentação e lado direito para atirar.
+- Texturas originais de deserto e madeira.
+- Catálogo de fontes/assets com licenças verificadas.
+- Estrutura de assets separada no projeto.
+- Expansão procedural/mundo maior e câmera baseada no mundo foram mencionadas no histórico.
+- Workflow de geração de APK Android foi criado/configurado no histórico, mas a existência de um APK final confirmado para download ainda não foi estabelecida.
+
+ASSETS E LICENÇAS
+- Não usar arquivos, texturas, modelos, personagens, sons ou outros assets originais de Red Dead Redemption/Red Dead Redemption 2/GTA/Rockstar sem autorização.
+- O fato de um pack estar disponível gratuitamente no YouTube ou em um fórum não significa que ele possa ser redistribuído em um jogo.
+- Priorizar assets explicitamente licenciados para reutilização, especialmente CC0.
+- Fontes pesquisadas no histórico: OpenGameArt, itch.io, Kenney e catálogos de assets CC0.
+- Assets Western citados no histórico incluem Cowboy Tiles, Hexagon Pack, Frontier Wagons, Bandits e tilesets de deserto/montanhas/cavernas, quando a página do asset indicar licença compatível.
+- O usuário quer algo GRANDE, não apenas um pequeno mapa. A intenção é combinar packs licenciados e/ou criar conteúdo próprio para formar um mundo amplo com cidade, deserto, estradas, montanhas, fazendas, acampamentos e outras regiões.
+- Foi discutido encontrar um pacote grande de ambiente 3D/2D Western com licença CC0 e integrá-lo diretamente ao projeto. Como a estrutura atual foi descrita como 2D, a integração inicial deve considerar compatibilidade com a estrutura existente e não quebrar o jogo.
+
+DIREÇÃO VISUAL E ESCOPO
+- O usuário quer um jogo bem detalhado e não quer limitar o projeto pelo tamanho do arquivo.
+- A meta é aumentar bastante o conteúdo: mapas, cidades, construções, personagens, missões, armas, animais, sons, vegetação, estradas e outras regiões.
+- A comparação com Red Dead/GTA é de escala/qualidade desejada e referência visual, não autorização para copiar assets protegidos.
+- Preferir mundo original, com identidade própria do Henry Western.
+
+APK / TESTE
+- O usuário pediu que, quando houver um build Android realmente concluído, seja fornecido um link para baixar o APK e testar no celular.
+- Não afirmar que existe APK disponível até que um workflow tenha concluído com sucesso e o artefato esteja confirmado.
+- O tamanho de aproximadamente 127 KB citado no histórico era o tamanho do repositório/projeto naquele momento, não o tamanho final do APK.
+
+ESTADO E PRÓXIMOS PASSOS
+- Continuar a expansão do mundo em vez de voltar a discutir apenas a base.
+- Procurar e integrar assets grandes e legalmente reutilizáveis, principalmente CC0, verificando a licença de cada pacote antes de incorporá-lo.
+- Expandir mapa e ambientes de forma modular para suportar cidade, deserto, estradas, montanhas, fazendas, acampamentos e futuras regiões.
+- Preservar a gameplay já planejada: missão, NPC, cavalo, combate, HUD, dinheiro, procurado e controles mobile.
+- Melhorar câmera, apresentação visual, animações e controles touch conforme a estrutura permitir.
+- Depois consolidar exportação Android e gerar APK beta verificável.
+
+COMO USAR ESTE ARQUIVO EM NOVAS CONVERSAS
+Este arquivo é uma referência persistente do contexto do projeto. Ao iniciar uma nova conversa sobre o Henry Western, consultar `HENRY_WESTERN_HISTORICO.txt` antes de decidir o próximo passo. Não tratar este arquivo como memória automática do modelo: ele é um registro no repositório que precisa ser acessado/consultado quando necessário.
+
+PREFERÊNCIAS DO USUÁRIO PARA O PROJETO
+- Trabalhar diretamente no GitHub quando possível.
+- Usuário normalmente trabalha pelo celular.
+- Evitar Replit como plataforma principal.
+- Priorizar soluções gratuitas quando possível.
+- Quando o usuário disser para continuar/fazer, avançar diretamente no projeto em vez de repetir explicações longas.
+- Não substituir o repositório `henry-ia`.
+- Não renomear o repositório.
