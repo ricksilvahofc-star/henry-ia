@@ -11,19 +11,28 @@ var enemies: Array[Dictionary] = [
 var money := 25
 var wanted := 0
 var health := 100
+var gameplay := preload("res://scripts/gameplay_system.gd").new()
 
 var ground_texture: Texture2D = preload("res://assets/generated/desert_ground.svg")
 var wood_texture: Texture2D = preload("res://assets/generated/wood_planks.svg")
 
 func _ready() -> void:
+    add_child(gameplay)
     queue_redraw()
 
 func _process(delta: float) -> void:
     var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-    velocity = direction * speed
+    velocity = direction * gameplay.get_speed(speed)
     player_pos += velocity * delta
     player_pos.x = clamp(player_pos.x, 50.0, 1230.0)
     player_pos.y = clamp(player_pos.y, 120.0, 670.0)
+
+    if Input.is_action_just_pressed("interact"):
+        gameplay.interact(player_pos)
+        if gameplay.mission_state == "completed":
+            money += gameplay.mission_reward
+            gameplay.mission_state = "rewarded"
+            gameplay.interaction_message = "Recompensa recebida! Procure outra missão."
 
     if Input.is_action_just_pressed("fire"):
         var target := get_global_mouse_position()
@@ -46,22 +55,36 @@ func _process(delta: float) -> void:
     queue_redraw()
 
 func _draw() -> void:
-    # Céu e deserto
     draw_rect(Rect2(0, 0, 1280, 720), Color("#8fc5df"))
     draw_rect(Rect2(0, 170, 1280, 550), Color("#a8753f"))
     draw_texture_rect(ground_texture, Rect2(0, 170, 1280, 550), true)
     draw_circle(Vector2(1080, 90), 45, Color("#f6d67a"))
 
-    # Montanhas distantes
+    # Montanhas e estrada
     draw_polygon(PackedVector2Array([Vector2(0,520),Vector2(260,300),Vector2(520,520)]), PackedColorArray([Color("#76502f")]))
     draw_polygon(PackedVector2Array([Vector2(620,520),Vector2(860,330),Vector2(1100,520)]), PackedColorArray([Color("#76502f")]))
+    draw_rect(Rect2(540, 170, 120, 550), Color(0.35, 0.24, 0.14, 0.45))
 
-    # Dusty Creek
+    # Dusty Creek / xerife
     draw_texture_rect(wood_texture, Rect2(70, 330, 260, 160), true)
     draw_rect(Rect2(70, 330, 260, 160), Color(0.45, 0.27, 0.15, 0.35))
     draw_rect(Rect2(105, 360, 80, 70), Color("#d4b06a"))
     draw_rect(Rect2(215, 350, 85, 80), Color("#c58b52"))
     draw_string(ThemeDB.fallback_font, Vector2(115, 315), "DUSTY CREEK", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color.WHITE)
+    draw_circle(gameplay.npc_pos, 18, Color("#31536a"))
+    draw_circle(gameplay.npc_pos + Vector2(0,-15), 11, Color("#bd7f59"))
+    draw_string(ThemeDB.fallback_font, gameplay.npc_pos + Vector2(-30,-30), "XERIFE", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color.WHITE)
+
+    # Cavalo
+    draw_ellipse(gameplay.horse_pos, Vector2(34, 18), Color("#5b3823"))
+    draw_circle(gameplay.horse_pos + Vector2(28,-18), 13, Color("#5b3823"))
+    draw_string(ThemeDB.fallback_font, gameplay.horse_pos + Vector2(-30,45), "CAVALO", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color.WHITE)
+
+    # Alvo da missão
+    if gameplay.mission_state == "accepted":
+        draw_circle(gameplay.target_pos, 20, Color("#7d2424"))
+        draw_circle(gameplay.target_pos + Vector2(0,-16), 11, Color("#bd7f59"))
+        draw_string(ThemeDB.fallback_font, gameplay.target_pos + Vector2(-30,-30), "ALVO", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color("#ffd98a"))
 
     # Player
     draw_circle(player_pos, 20, Color("#2e2520"))
@@ -69,18 +92,25 @@ func _draw() -> void:
     draw_rect(Rect2(player_pos.x-18, player_pos.y-35, 36, 7), Color("#4a2e1d"))
     draw_line(player_pos, get_global_mouse_position(), Color(1,1,1,0.25), 2)
 
-    # Inimigos
     for enemy in enemies:
         if enemy.alive:
             draw_circle(enemy.pos, 18, Color("#6d2525"))
             draw_circle(enemy.pos + Vector2(0,-15), 11, Color("#bd7f59"))
 
-    # Balas
     for bullet in bullets:
         draw_circle(bullet.pos, 5, Color("#f8e7a1"))
 
     # HUD
-    draw_rect(Rect2(20, 20, 310, 82), Color(0,0,0,0.55))
+    draw_rect(Rect2(20, 20, 520, 112), Color(0,0,0,0.62))
     draw_string(ThemeDB.fallback_font, Vector2(35, 48), "HENRY WESTERN", HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color.WHITE)
     draw_string(ThemeDB.fallback_font, Vector2(35, 75), "Vida: %d   $%d   Procurado: %d/5" % [health, money, wanted], HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color.WHITE)
-    draw_string(ThemeDB.fallback_font, Vector2(35, 690), "WASD = mover   |   Clique = atirar", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color.WHITE)
+    draw_string(ThemeDB.fallback_font, Vector2(35, 102), gameplay.get_mission_label(), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color("#ffd98a"))
+    draw_string(ThemeDB.fallback_font, Vector2(35, 690), "WASD = mover | E = interagir | Clique = atirar", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color.WHITE)
+    draw_string(ThemeDB.fallback_font, Vector2(700, 650), gameplay.interaction_message, HORIZONTAL_ALIGNMENT_LEFT, 540, 18, Color.WHITE)
+
+func draw_ellipse(center: Vector2, radii: Vector2, color: Color) -> void:
+    var points := PackedVector2Array()
+    for i in range(24):
+        var a := TAU * float(i) / 24.0
+        points.append(center + Vector2(cos(a) * radii.x, sin(a) * radii.y))
+    draw_colored_polygon(points, color)
