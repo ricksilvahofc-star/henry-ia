@@ -12,11 +12,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Godot
+      - name: Setup Godot with Android export templates
         uses: chickensoft-games/setup-godot@v2
         with:
           version: 4.5.1
           use-dotnet: false
+          include-templates: true
 
       - name: Import project
         run: godot --headless --editor --quit --path .
