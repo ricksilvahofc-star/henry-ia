@@ -12,6 +12,9 @@ var money := 25
 var wanted := 0
 var health := 100
 
+var ground_texture: Texture2D = preload("res://assets/generated/desert_ground.svg")
+var wood_texture: Texture2D = preload("res://assets/generated/wood_planks.svg")
+
 func _ready() -> void:
     queue_redraw()
 
@@ -43,16 +46,19 @@ func _process(delta: float) -> void:
     queue_redraw()
 
 func _draw() -> void:
-    # Sky, desert and road
-    draw_rect(Rect2(0, 0, 1280, 720), Color("#d8a85c"))
-    draw_rect(Rect2(0, 0, 1280, 170), Color("#8fc5df"))
+    # Céu e deserto
+    draw_rect(Rect2(0, 0, 1280, 720), Color("#8fc5df"))
+    draw_rect(Rect2(0, 170, 1280, 550), Color("#a8753f"))
+    draw_texture_rect(ground_texture, Rect2(0, 170, 1280, 550), true)
     draw_circle(Vector2(1080, 90), 45, Color("#f6d67a"))
-    draw_rect(Rect2(0, 520, 1280, 200), Color("#b98545"))
-    draw_polygon(PackedVector2Array([Vector2(0,520),Vector2(260,300),Vector2(520,520)]), PackedColorArray([Color("#9a6b43")]))
-    draw_polygon(PackedVector2Array([Vector2(620,520),Vector2(860,330),Vector2(1100,520)]), PackedColorArray([Color("#9a6b43")]))
 
-    # Town
-    draw_rect(Rect2(70, 330, 260, 160), Color("#7b4f32"))
+    # Montanhas distantes
+    draw_polygon(PackedVector2Array([Vector2(0,520),Vector2(260,300),Vector2(520,520)]), PackedColorArray([Color("#76502f")]))
+    draw_polygon(PackedVector2Array([Vector2(620,520),Vector2(860,330),Vector2(1100,520)]), PackedColorArray([Color("#76502f")]))
+
+    # Dusty Creek
+    draw_texture_rect(wood_texture, Rect2(70, 330, 260, 160), true)
+    draw_rect(Rect2(70, 330, 260, 160), Color(0.45, 0.27, 0.15, 0.35))
     draw_rect(Rect2(105, 360, 80, 70), Color("#d4b06a"))
     draw_rect(Rect2(215, 350, 85, 80), Color("#c58b52"))
     draw_string(ThemeDB.fallback_font, Vector2(115, 315), "DUSTY CREEK", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color.WHITE)
@@ -63,13 +69,13 @@ func _draw() -> void:
     draw_rect(Rect2(player_pos.x-18, player_pos.y-35, 36, 7), Color("#4a2e1d"))
     draw_line(player_pos, get_global_mouse_position(), Color(1,1,1,0.25), 2)
 
-    # Enemies
+    # Inimigos
     for enemy in enemies:
         if enemy.alive:
             draw_circle(enemy.pos, 18, Color("#6d2525"))
             draw_circle(enemy.pos + Vector2(0,-15), 11, Color("#bd7f59"))
 
-    # Bullets
+    # Balas
     for bullet in bullets:
         draw_circle(bullet.pos, 5, Color("#f8e7a1"))
 
