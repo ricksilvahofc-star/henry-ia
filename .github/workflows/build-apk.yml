@@ -18,20 +18,10 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Prepare Android SDK
-        run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
-          which sdkmanager || true
-          yes | sdkmanager --licenses >/dev/null 2>&1 || true
-          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
-
-      - name: Setup Godot with Android export templates
-        uses: chickensoft-games/setup-godot@v2
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
         with:
-          version: 4.5.1
-          use-dotnet: false
-          include-templates: true
+          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
 
       - name: Configure Android environment
         run: |
@@ -40,6 +30,13 @@ jobs:
           java -version
           adb version
           sdkmanager --list_installed | head -80
+
+      - name: Setup Godot with Android export templates
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.5.1
+          use-dotnet: false
+          include-templates: true
 
       - name: Import project
         run: godot --headless --editor --quit --path .
