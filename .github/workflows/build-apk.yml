@@ -25,7 +25,10 @@ jobs:
       - name: Export Android APK
         run: |
           mkdir -p build
-          godot --headless --path . --export-debug "Android" build/Henry-Western-Beta.apk
+          godot --headless --verbose --path . --export-debug "Android" build/Henry-Western-Beta.apk
+
+      - name: Verify APK exists
+        run: test -s build/Henry-Western-Beta.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
