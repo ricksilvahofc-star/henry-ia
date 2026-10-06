@@ -1,9 +1,19 @@
-const { ML_API, seal, setCookie, clearCookie, sendJson } = require("../lib/ml");
+const crypto = require("crypto");
+const { ML_API, seal, setCookie, sendJson } = require("../lib/ml");
 
-function readCookie(req, name) {
-  const header = req.headers.cookie || "";
-  const found = header.split(";").map(x=>x.trim()).find(x=>x.startsWith(name + "="));
-  return found ? found.slice(name.length + 1) : null;
+function validState(state) {
+  try {
+    const parts = String(state || "").split(".");
+    if (parts.length !== 2) return false;
+    const [payload, sig] = parts;
+    const expected = crypto.createHmac("sha256", process.env.SESSION_KEY).update(payload).digest("base64url");
+    if (sig.length !== expected.length) return false;
+    if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return false;
+    const saved = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+    return saved && Date.now() - Number(saved.created_at || 0) <= 10 * 60 * 1000;
+  } catch {
+    return false;
+  }
 }
 
 module.exports = async (req, res) => {
@@ -15,14 +25,7 @@ module.exports = async (req, res) => {
 
     if (error) return sendJson(res, 400, {error, message:"Autorização cancelada no Mercado Livre."});
     if (!code) return sendJson(res, 400, {error:"missing_code"});
-
-    const stateCookie = readCookie(req, "ml_oauth_state");
-    if (!state || !stateCookie) return sendJson(res, 400, {error:"invalid_state"});
-    let saved;
-    try { saved = JSON.parse(Buffer.from(stateCookie, "base64url").toString("utf8")); } catch { saved = null; }
-    if (!saved || saved.state !== state || Date.now() - Number(saved.created_at || 0) > 10 * 60 * 1000) {
-      return sendJson(res, 400, {error:"invalid_state"});
-    }
+    if (!validState(state)) return sendJson(res, 400, {error:"invalid_state"});
 
     const body = new URLSearchParams({
       grant_type:"authorization_code",
@@ -49,7 +52,6 @@ module.exports = async (req, res) => {
       expires_at:Date.now() + Number(data.expires_in || 21600) * 1000
     };
     setCookie(res, seal(session), 60*60*24*30);
-    clearCookie(res, "ml_oauth_state");
 
     res.statusCode = 302;
     res.setHeader("Location", "/?connected=1");
