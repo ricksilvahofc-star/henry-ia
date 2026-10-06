@@ -48,7 +48,8 @@ module.exports = async (req, res) => {
       refresh_token:data.refresh_token,
       expires_at:Date.now() + Number(data.expires_in || 21600) * 1000
     };
-    setCookie(res, seal(session), 60*60*24*30);\n    clearCookie(res, "ml_oauth_state");
+    setCookie(res, seal(session), 60*60*24*30);
+    clearCookie(res, "ml_oauth_state");
 
     res.statusCode = 302;
     res.setHeader("Location", "/?connected=1");
