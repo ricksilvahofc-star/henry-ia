@@ -1,9 +1,9 @@
-const { ML_API, seal, setCookie, sendJson } = require("../lib/ml");
+const { ML_API, seal, setCookie, clearCookie, sendJson } = require("../lib/ml");
 
-function readStateCookie(req) {
+function readCookie(req, name) {
   const header = req.headers.cookie || "";
-  const found = header.split(";").map(x=>x.trim()).find(x=>x.startsWith("ml_session="));
-  return null;
+  const found = header.split(";").map(x=>x.trim()).find(x=>x.startsWith(name + "="));
+  return found ? found.slice(name.length + 1) : null;
 }
 
 module.exports = async (req, res) => {
@@ -15,6 +15,14 @@ module.exports = async (req, res) => {
 
     if (error) return sendJson(res, 400, {error, message:"Autorização cancelada no Mercado Livre."});
     if (!code) return sendJson(res, 400, {error:"missing_code"});
+
+    const stateCookie = readCookie(req, "ml_oauth_state");
+    if (!state || !stateCookie) return sendJson(res, 400, {error:"invalid_state"});
+    let saved;
+    try { saved = JSON.parse(Buffer.from(stateCookie, "base64url").toString("utf8")); } catch { saved = null; }
+    if (!saved || saved.state !== state || Date.now() - Number(saved.created_at || 0) > 10 * 60 * 1000) {
+      return sendJson(res, 400, {error:"invalid_state"});
+    }
 
     const body = new URLSearchParams({
       grant_type:"authorization_code",
@@ -40,7 +48,7 @@ module.exports = async (req, res) => {
       refresh_token:data.refresh_token,
       expires_at:Date.now() + Number(data.expires_in || 21600) * 1000
     };
-    setCookie(res, seal(session), 60*60*24*30);
+    setCookie(res, seal(session), 60*60*24*30);\n    clearCookie(res, "ml_oauth_state");
 
     res.statusCode = 302;
     res.setHeader("Location", "/?connected=1");
