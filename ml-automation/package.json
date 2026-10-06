@@ -1,0 +1,9 @@
+{
+  "name": "henry-mercado-livre-automation",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Automação pessoal do Mercado Livre para o Henry",
+  "engines": {
+    "node": ">=20"
+  }
+}
