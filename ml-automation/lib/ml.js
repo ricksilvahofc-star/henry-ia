@@ -28,12 +28,12 @@ function open(value) {
   return JSON.parse(Buffer.concat([decipher.update(encrypted), decipher.final()]).toString("utf8"));
 }
 
-function setCookie(res, value, maxAge = 60 * 60 * 24 * 30) {
-  res.setHeader("Set-Cookie", `${COOKIE}=${value}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`);
+function setCookie(res, value, maxAge = 60 * 60 * 24 * 30, name = COOKIE) {
+  res.setHeader("Set-Cookie", `${name}=${value}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`);
 }
 
-function clearCookie(res) {
-  res.setHeader("Set-Cookie", `${COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`);
+function clearCookie(res, name = COOKIE) {
+  res.setHeader("Set-Cookie", `${name}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`);
 }
 
 function readCookie(req) {
