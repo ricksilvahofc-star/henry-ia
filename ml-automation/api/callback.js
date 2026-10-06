@@ -39,13 +39,13 @@ module.exports = async (req, res) => {
     });
     const data = await r.json();
 
-    if (!r.ok || !data.access_token || !data.refresh_token) {
+    if (!r.ok || !data.access_token) {
       return sendJson(res, r.status || 400, {error:"token_exchange_failed", details:data});
     }
 
     const session = {
       access_token:data.access_token,
-      refresh_token:data.refresh_token,
+      refresh_token:data.refresh_token || null,
       expires_at:Date.now() + Number(data.expires_in || 21600) * 1000
     };
     setCookie(res, seal(session), 60*60*24*30);
