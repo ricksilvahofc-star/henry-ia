@@ -8,7 +8,7 @@ module.exports = async (req, res) => {
   }
 
   const state = crypto.randomBytes(24).toString("hex");
-  setCookie(res, Buffer.from(JSON.stringify({state, created_at:Date.now()})).toString("base64url"), 600);
+  setCookie(res, Buffer.from(JSON.stringify({state, created_at:Date.now()})).toString("base64url"), 600, "ml_oauth_state");
 
   const params = new URLSearchParams({
     response_type:"code",
